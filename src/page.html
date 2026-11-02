@@ -111,6 +111,13 @@ kbd{font:600 10px/1 var(--f-display);padding:2px 4px;border-radius:4px;border:1p
 .pile-discard .card{position:absolute;inset:0;width:100%;transform:rotate(var(--rot,0deg))}
 .pile-discard .card.land{animation:land .3s cubic-bezier(.2,.8,.3,1.15)}
 .pile-discard.flash::after{content:"";position:absolute;inset:-12px;border-radius:18px;border:3px solid var(--gold);animation:ring .5s ease-out infinite;pointer-events:none}
+.flylayer{position:fixed;inset:0;pointer-events:none;z-index:45;overflow:hidden}
+.flyer{position:absolute;left:0;top:0;width:var(--w);transform-origin:50% 50%;will-change:transform;filter:drop-shadow(0 12px 18px rgba(0,0,0,.45))}
+.pile-discard .card.incoming{visibility:hidden}
+.seat.just{border-color:var(--jc);box-shadow:0 0 0 3px var(--jc),0 0 18px var(--jc)}
+.seat .mini{position:absolute;right:8px;top:50%;--w:24px;translate:0 -50%;rotate:8deg;z-index:2;animation:pop .2s ease-out}
+.pilelabel .dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--av);margin-right:5px;vertical-align:-1px}
+#discardBy{color:var(--ink);font-weight:700}
 .slapcell{grid-area:slap;justify-self:start;display:flex;flex-direction:column;align-items:center;gap:8px}
 .slap{all:unset;box-sizing:border-box;width:clamp(88px,22vw,132px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;align-content:center;background:radial-gradient(circle at 36% 30%,#ff8f7b,var(--red) 58%,#9e1f22);box-shadow:0 8px 0 #6d1418,0 14px 30px rgba(0,0,0,.45);cursor:pointer;text-align:center;font:900 clamp(30px,7vw,46px)/1 var(--f-body);color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.25);user-select:none;-webkit-user-select:none;touch-action:manipulation;transition:transform .06s,box-shadow .06s}
 .slap small{display:block;font:600 11px/1 var(--f-body);opacity:.8;margin-top:6px;text-shadow:none}
@@ -299,7 +306,7 @@ kbd{font:600 10px/1 var(--f-display);padding:2px 4px;border-radius:4px;border:1p
       </div>
       <div class="pilecol">
         <div class="pile-discard" id="discard"></div>
-        <span class="pilelabel">弃牌堆</span>
+        <span class="pilelabel" id="discardBy">弃牌堆</span>
       </div>
     </div>
     <div class="slapcell">
@@ -327,6 +334,7 @@ kbd{font:600 10px/1 var(--f-display);padding:2px 4px;border-radius:4px;border:1p
 
 <div class="toasts" id="toasts" aria-live="polite"></div>
 <div class="slapres" id="slapres" hidden></div>
+<div class="flylayer" id="flylayer" aria-hidden="true"></div>
 
 <div class="overlay" id="setup">
   <div class="panel">
@@ -487,6 +495,7 @@ let roomAvail;           // undefined while checking
 let roomP = null, userP = null;
 // view-side trackers
 let lastTopId = null, sayFirst = {}, freshUntil = {}, prevMyIds = null, prevRoundKey = null, prevSnd = null;
+let flyingTopId = null, playFlash = null, myPlayRect = null, prevCounts = null, prevCountsKey = null;
 let seenFeed = -1, slapResShown = null, reShownKey = null, lockN = null, lockT = 0;
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -732,7 +741,7 @@ const cfgFromSettings = () => ({diff: settings.diff, pen: settings.slapPen, targ
 function reshuffle(){
   if (S.discard.length <= 1) return;
   const top = S.discard.pop();
-  S.deck = shuffle(S.discard.map(c => { delete c.chosen; delete c.rot; return c; }));
+  S.deck = shuffle(S.discard.map(c => { delete c.chosen; delete c.rot; delete c.by; return c; }));
   S.discard = [top];
   log('牌堆摸完了，弃牌洗回去');
 }
@@ -847,6 +856,7 @@ async function playCard(pi, card, chosen){
   p.hand.splice(idx, 1);
   if (card.c === 'w') card.chosen = chosen;
   card.rot = rand(-14, 14);
+  card.by = pi;
   S.discard.push(card);
   S.color = card.c === 'w' ? chosen : card.c;
   log(`@${pi}出了 ${cardLabel(card)}`);
@@ -1078,6 +1088,7 @@ function onHandClick(e){
     else toast(`要出${CN[S.color]}色，或者跟顶牌一样的「${VNAME(topCard().v)}」`);
     return;
   }
+  myPlayRect = {id: card.id, rect: b.getBoundingClientRect()};
   if (card.c === 'w'){
     pickColor(me.hand).then(color => { if (color && humanCanAct()) act({type:'play', card:card.id, color}); });
   } else act({type:'play', card:card.id});
@@ -1089,6 +1100,13 @@ function render(){
   const n = S.players.length, now = Date.now();
   const me = mySeat >= 0 ? S.players[mySeat] : null;
   const live = S.phase === 'play' || S.phase === 'slap' || S.phase === 'slapResult';
+  const topNow = S.discard[S.discard.length - 1] || null;
+  let flyPlan = null;
+  if (topNow && lastTopId !== null && topNow.id !== lastTopId && topNow.by != null && topNow.by >= 0){
+    playFlash = {seat: topNow.by, until: now + 1700, card: topNow};
+    setTimeout(render, 1750);
+    if (!reduceMotion()){ flyPlan = {card: topNow, by: topNow.by}; flyingTopId = topNow.id; }
+  }
   $('#roundinfo').textContent = `第 ${S.round} 局 · ${S.cfg.target ? '先到 ' + S.cfg.target + ' 分' : '单局定胜负'}`;
 
   for (const [k, v] of Object.entries(S.say || {})){
@@ -1106,13 +1124,15 @@ function render(){
     const p = S.players[i];
     const st = S.slap && S.slap.times[i] != null ? S.slap.times[i] : null;
     const sy = sayText(i);
+    const just = !!playFlash && playFlash.seat === i && now < playFlash.until;
     const tags = (p.hand.length === 1 && p.saidUno ? '<span class="tag">UNO</span>' : '')
       + (online() && p.kind === 'ai' ? '<span class="tag2">电脑</span>' : '')
       + (p.bot ? '<span class="tag2">代打</span>' : '');
-    h += `<div class="seat${S.current === i && live ? ' turn' : ''}">
+    h += `<div class="seat${S.current === i && live ? ' turn' : ''}${just ? ' just' : ''}" data-seat="${i}"${just ? ` style="--jc:${flashColor(playFlash.card)}"` : ''}>
       <span class="av" style="--av:${AV[i % AV.length]}">${esc([...p.name][0] || '?')}</span>
       <div class="seat-main"><div class="seat-name"><span class="nm">${esc(p.name)}</span>${tags}</div>
       <div class="seat-sub"><b class="cnt">${p.hand.length}</b>张 · ${p.score} 分</div></div>
+      ${just ? `<span class="mini">${cardHTML(playFlash.card)}</span>` : ''}
       ${i === nxt && S.phase === 'play' ? '<span class="nexttag">下一个</span>' : ''}
       ${st != null ? `<span class="stamp">拍 ${(st / 1000).toFixed(2)}s</span>` : ''}
       ${sy ? `<span class="say">${esc(sy)}</span>` : ''}
@@ -1136,13 +1156,15 @@ function render(){
   const top3 = S.discard.slice(-3);
   $('#discard').innerHTML = top3.map((c, k) => {
     const isTop = k === top3.length - 1;
-    let extra = isTop && c.id !== lastTopId ? 'land' : '';
+    let extra = !isTop ? '' : c.id === flyingTopId ? 'incoming' : c.id !== lastTopId ? 'land' : '';
     let style = `--rot:${(c.rot || 0).toFixed(1)}deg`;
     if (isTop && c.c === 'w' && COLORS.includes(c.chosen)){ extra += ' ring'; style += `;--ring:${CV[c.chosen]}`; }
     return cardHTML(c, extra, style);
   }).join('');
   const topId = top3.length ? top3[top3.length - 1].id : null;
   lastTopId = topId;
+  const tb = top3.length ? top3[top3.length - 1].by : undefined;
+  $('#discardBy').innerHTML = tb != null && tb >= 0 && S.players[tb] ? `<i class="dot" style="--av:${AV[tb % AV.length]}"></i>${esc(who(tb))}出的` : '弃牌堆';
   $('#discard').classList.toggle('flash', S.phase === 'slap');
   $('#slap').classList.toggle('hot', S.phase === 'slap');
   $('#slap').disabled = !me;
@@ -1238,7 +1260,69 @@ function render(){
     }).join('');
     fitHand();
   }
+  if (flyPlan) runPlayFly(flyPlan);
+  runDrawFlies();
   if (mode === 'host') broadcast();
+}
+const reduceMotion = () => !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+const flashColor = c => c.c === 'w' ? (CV[c.chosen] || 'var(--gold)') : CV[c.c];
+/* a card image that travels from one box on screen to another, then disappears */
+function fly(html, from, to, o){
+  const w = o.w, h = w * 1.5;
+  const fx = from.left + from.width / 2 - w / 2, fy = from.top + from.height / 2 - h / 2;
+  const tx = to.left + to.width / 2 - w / 2, ty = to.top + to.height / 2 - h / 2;
+  const el = document.createElement('div');
+  el.className = 'flyer'; el.style.setProperty('--w', w + 'px'); el.innerHTML = html;
+  $('#flylayer').appendChild(el);
+  const a = el.animate([
+    {transform: `translate(${fx}px,${fy}px) scale(${o.s0}) rotate(${o.r0 || 0}deg)`},
+    {transform: `translate(${tx}px,${ty}px) scale(${o.s1}) rotate(${o.r1 || 0}deg)`},
+  ], {duration: o.dur || 420, delay: o.delay || 0, easing: 'cubic-bezier(.2,.75,.25,1)', fill: 'both'});
+  let over = false;
+  const end = () => { if (over) return; over = true; clearTimeout(t); el.remove(); if (o.onEnd) o.onEnd(); };
+  const t = setTimeout(end, (o.dur || 420) + (o.delay || 0) + 400);   // backstop when the page's animation clock is paused
+  a.onfinish = end; a.oncancel = end;
+}
+function runPlayFly(plan){
+  const c = plan.card;
+  const done = () => {
+    if (flyingTopId !== c.id) return;
+    flyingTopId = null;
+    const el = $('#discard .card.incoming'); if (el) el.classList.remove('incoming');
+  };
+  setTimeout(done, 1200);
+  const to = $('#discard').getBoundingClientRect();
+  let from = null, s0 = .45;
+  if (plan.by === mySeat){
+    if (myPlayRect && myPlayRect.id === c.id){ from = myPlayRect.rect; s0 = from.width / (to.width || 1); }
+    else { from = $('#hand').getBoundingClientRect(); s0 = .8; }
+    myPlayRect = null;
+  } else {
+    const seat = document.querySelector(`#seats [data-seat="${plan.by}"]`);
+    if (seat) from = seat.getBoundingClientRect();
+  }
+  if (!from || !to.width){ done(); return; }
+  fly(cardHTML(c), from, to, {w: to.width, s0, s1: 1, r0: (c.rot || 0) - 28, r1: c.rot || 0, dur: 460, onEnd: done});
+}
+function runDrawFlies(){
+  const counts = S.players.map(p => p.hand.length);
+  const key = S.round + ':' + counts.length;
+  const prev = prevCountsKey === key ? prevCounts : null;
+  prevCounts = counts; prevCountsKey = key;
+  if (!prev || reduceMotion()) return;
+  const from = $('#drawPile').getBoundingClientRect();
+  if (!from.width) return;
+  let budget = 8;
+  counts.forEach((c, i) => {
+    const d = c - (prev[i] || 0);
+    if (d <= 0) return;
+    let to = null;
+    if (i === mySeat) to = $('#hand').getBoundingClientRect();
+    else { const el = document.querySelector(`#seats [data-seat="${i}"]`); if (el) to = el.getBoundingClientRect(); }
+    if (!to) return;
+    for (let k = 0; k < Math.min(d, 4) && budget > 0; k++, budget--)
+      fly(BACK, from, to, {w: from.width, s0: 1, s1: i === mySeat ? .85 : .35, r1: rand(-12, 12), dur: 380, delay: k * 90});
+  });
 }
 function fitHand(){
   const el = $('#hand'); const kids = el.querySelectorAll('.cardbtn');
@@ -1288,6 +1372,7 @@ function showRoundEnd(r){
 function resetView(){
   lastTopId = null; prevMyIds = null; prevRoundKey = null; prevSnd = null;
   seenFeed = -1; slapResShown = null; reShownKey = null; lockN = null; freshUntil = {};
+  flyingTopId = null; playFlash = null; myPlayRect = null; prevCounts = null; prevCountsKey = null;
 }
 function resetBoard(){
   $('#seats').innerHTML = ''; $('#log').innerHTML = ''; $('#discard').innerHTML = '';
@@ -1314,7 +1399,7 @@ function encodeState(){
   return {
     p: S.players.map(p => [p.name, p.kind === 'ai' ? 'a' : 'h', p.uid || '', p.sid || '', p.score, encIds(p.hand.map(c => c.id)), p.saidUno ? 1 : 0, p.bot ? 1 : 0]),
     d: S.deck.length,
-    x: S.discard.slice(-3).map(c => [c.id, Math.round(c.rot || 0), c.chosen || '']),
+    x: S.discard.slice(-3).map(c => [c.id, Math.round(c.rot || 0), c.chosen || '', c.by == null ? -1 : c.by]),
     c: S.color, dir: S.dir, cur: S.current, aw: S.awaiting, pd: S.pendingDrawn == null ? -1 : S.pendingDrawn,
     ph: S.phase, rd: S.round,
     cfg: {t: S.cfg.target, pen: S.cfg.pen, fs: S.cfg.falseSlap ? 1 : 0, df: S.cfg.diff},
@@ -1329,7 +1414,7 @@ function decodeState(st){
   const players = (Array.isArray(st.p) ? st.p : []).slice(0, 10).map(a => ({
     name: cleanName(a[0]) || '玩家', kind: a[1] === 'a' ? 'ai' : 'remote', uid: String(a[2] || ''), sid: String(a[3] || ''),
     score: num(a[4], 0), hand: decIds(String(a[5] || '')), saidUno: !!a[6], bot: !!a[7]}));
-  const discard = (Array.isArray(st.x) ? st.x : []).map(a => { const c = CARDS[a[0]]; return c ? {id:c.id, c:c.c, v:c.v, rot:num(a[1], 0), chosen: COLORS.includes(a[2]) ? a[2] : undefined} : null; }).filter(Boolean);
+  const discard = (Array.isArray(st.x) ? st.x : []).map(a => { const c = CARDS[a[0]]; return c ? {id:c.id, c:c.c, v:c.v, rot:num(a[1], 0), chosen: COLORS.includes(a[2]) ? a[2] : undefined, by: num(a[3], -1) >= 0 ? a[3] : undefined} : null; }).filter(Boolean);
   const cfg = st.cfg || {};
   return {
     players, deck: {length: num(st.d, 0)}, discard, color: COLORS.includes(st.c) ? st.c : 'r', dir: st.dir === -1 ? -1 : 1,
