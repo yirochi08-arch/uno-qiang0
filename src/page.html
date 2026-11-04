@@ -118,6 +118,9 @@ kbd{font:600 10px/1 var(--f-display);padding:2px 4px;border-radius:4px;border:1p
 .seat .mini{position:absolute;right:8px;top:50%;--w:24px;translate:0 -50%;rotate:8deg;z-index:2;animation:pop .2s ease-out}
 .pilelabel .dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--av);margin-right:5px;vertical-align:-1px}
 #discardBy{color:var(--ink);font-weight:700}
+.pilecol{position:relative}
+.stackbadge{position:absolute;top:-14px;right:-18px;z-index:3;font:900 italic 20px/1 var(--f-display);color:#fff;background:var(--red);padding:7px 10px;border-radius:999px;box-shadow:0 3px 0 #7d1a1c,0 0 0 3px rgba(255,211,92,.5);animation:urgent .5s ease-in-out infinite alternate;white-space:nowrap}
+.stackbadge small{font:700 11px/1 var(--f-body);margin-left:3px}
 .slapcell{grid-area:slap;justify-self:start;display:flex;flex-direction:column;align-items:center;gap:8px}
 .slap{all:unset;box-sizing:border-box;width:clamp(88px,22vw,132px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;align-content:center;background:radial-gradient(circle at 36% 30%,#ff8f7b,var(--red) 58%,#9e1f22);box-shadow:0 8px 0 #6d1418,0 14px 30px rgba(0,0,0,.45);cursor:pointer;text-align:center;font:900 clamp(30px,7vw,46px)/1 var(--f-body);color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.25);user-select:none;-webkit-user-select:none;touch-action:manipulation;transition:transform .06s,box-shadow .06s}
 .slap small{display:block;font:600 11px/1 var(--f-body);opacity:.8;margin-top:6px;text-shadow:none}
@@ -324,6 +327,7 @@ button.sb.empty:hover{border-color:var(--gold);color:var(--gold)}
       </div>
       <div class="pilecol">
         <div class="pile-discard" id="discard"></div>
+        <span class="stackbadge" id="stackBadge" hidden></span>
         <span class="pilelabel" id="discardBy">弃牌堆</span>
       </div>
     </div>
@@ -368,6 +372,7 @@ button.sb.empty:hover{border-color:var(--gold);color:var(--gold)}
       <div class="field"><div class="flabel"><span>电脑水平</span><b id="diffHint"></b></div><div class="seg" id="segDiff"></div></div>
       <div class="field"><div class="flabel"><span>抢0 最慢的罚摸</span></div><div class="seg" id="segPen"></div></div>
       <div class="field"><div class="flabel"><span>胜负</span></div><div class="seg" id="segTarget"></div></div>
+      <div class="field"><div class="flabel"><span>加牌规则</span><b id="stackHint"></b></div><div class="seg" id="segStack"></div></div>
       <div class="toggles">
         <label class="tog"><input type="checkbox" id="optFalse"> 没有 0 乱拍，罚摸 1 张</label>
         <label class="tog"><input type="checkbox" id="optSound"> 音效</label>
@@ -417,6 +422,7 @@ button.sb.empty:hover{border-color:var(--gold);color:var(--gold)}
       <div class="field"><div class="flabel"><span>电脑水平</span></div><div class="seg" id="lobDiff"></div></div>
       <div class="field"><div class="flabel"><span>抢0 最慢的罚摸</span></div><div class="seg" id="lobPen"></div></div>
       <div class="field"><div class="flabel"><span>胜负</span></div><div class="seg" id="lobTarget"></div></div>
+      <div class="field"><div class="flabel"><span>加牌规则</span></div><div class="seg" id="lobStack"></div></div>
       <label class="tog"><input type="checkbox" id="lobFalse"> 没有 0 乱拍，罚摸 1 张</label>
     </div>
     <p class="note" id="lobWait"></p>
@@ -436,7 +442,8 @@ button.sb.empty:hover{border-color:var(--gold);color:var(--gold)}
       <li>每人 7 张。跟顶牌<b>同色</b>或<b>同数字/同符号</b>就能出；万能牌随时能出，出完指定颜色。</li>
       <li><b>+4</b> 只有手里没有当前颜色的牌时才能出。</li>
       <li>没牌可出（或不想出）就摸 1 张，摸到能出的可以马上出这一张。</li>
-      <li><b>跳过</b>：下家停一轮。<b>反转</b>：出牌方向掉头，两人局等于跳过。<b>+2 / +4</b>：下家摸牌并停一轮，不能叠加。</li>
+      <li><b>跳过</b>：下家停一轮。<b>反转</b>：出牌方向掉头，两人局等于跳过。<b>+2 / +4</b>：下家摸牌并停一轮（经典玩法不能叠加）。</li>
+      <li><b>加牌叠加（可选玩法）</b>：在设置或房间里选「可叠加」。有人出了 +2，下家可以接着出任意颜色的 +2 或 +4，把累计张数传下去；一旦叠进 +4，后面只能接 +4。接不上（或不想接）的人摸走全部累计的牌，并停一轮。叠加时出 +4 不受「手里没有当前颜色」的限制。</li>
       <li><span class="hot0">抢0</span> 任何人出了 0，所有人抢着拍（点「拍」或按空格），最慢的人罚摸牌，张数在设置里选。没有 0 时乱拍罚 1 张（可关）。联机时每人的反应时间按自己屏幕上看到 0 的那一刻算。</li>
       <li><b>UNO</b>：出到只剩 1 张时要喊。可以在剩 2 张时先按，也可以出完马上按。被别人抢先抓到，罚摸 2 张。有人忘喊时，他的座位上会出现「抓」，点它就让他罚 2 张。</li>
       <li><b>联机</b>：房主开房间，朋友输入房间号加入。进房间后点圆桌上的空位选座，出牌按座位顺时针轮；没选座的人自动补空位，剩下的由电脑坐。有人掉线，电脑先代打，回来后接着自己出；轮到谁超过 45 秒没动，电脑替他出一手。整局牌在房主的页面上运行，房主请一直开着、别切到后台。</li>
@@ -492,6 +499,7 @@ const PROTO = 2;
 const DIFF_OPTS = Object.entries(DIFF).map(([k, d]) => [k, d.label]);
 const PEN_OPTS = [[1,'1 张'],[2,'2 张'],[3,'3 张'],[4,'4 张']];
 const TARGET_OPTS = [[500,'先到 500 分'],[0,'单局定胜负']];
+const STACK_OPTS = [[0,'经典：不叠加'],[1,'可叠加']];
 const SEAT_OPTS = [2,3,4,5,6,7,8,9,10].map(v => [v, String(v)]);
 
 /* the 108 cards; an id always means the same card, so state can travel as ids */
@@ -508,7 +516,7 @@ const CARDS = (() => {
   return d;
 })();
 
-let settings = {n:4, seats:4, diff:'normal', slapPen:2, target:500, falseSlap:true, sound:true, mode:'local'};
+let settings = {n:4, seats:4, diff:'normal', slapPen:2, target:500, stack:false, falseSlap:true, sound:true, mode:'local'};
 let S = null;            // local/host: the real game; client: a mirror decoded from the host
 let mode = 'local';      // 'local' | 'host' | 'client'
 let mySeat = 0;          // -1 = watching
@@ -734,6 +742,7 @@ function cardHTML(c, extra, style){
 const sortHand = h => [...h].sort((a, b) => CORD[a.c] - CORD[b.c] || VORD(a.v) - VORD(b.v));
 const topCard = () => S.discard[S.discard.length - 1];
 function playable(card, hand){
+  if (S.stack) return card.v === 'wd4' || (card.v === 'd2' && S.stack.t === 'd2');   // only another draw card answers a stack
   if (card.v === 'wd4') return !hand.some(c => c.c === S.color);
   if (card.v === 'wild') return true;
   const top = topCard();
@@ -765,7 +774,7 @@ function toast(msg, kind){
   setTimeout(() => el.remove(), 2600);
 }
 const mkPlayer = (name, kind, uid, sid) => ({name, kind, uid: uid || '', sid: sid || '', hand:[], score:0, saidUno:false, bot:false});
-const cfgFromSettings = () => ({diff: settings.diff, pen: settings.slapPen, target: settings.target, falseSlap: !!settings.falseSlap});
+const cfgFromSettings = () => ({diff: settings.diff, pen: settings.slapPen, target: settings.target, falseSlap: !!settings.falseSlap, stack: !!settings.stack});
 function reshuffle(){
   if (S.discard.length <= 1) return;
   const top = S.discard.pop();
@@ -813,7 +822,7 @@ function newRound(){
   S.discard.push(top);
   Object.assign(S, {color:top.c, dir:1, current:S.starter, phase:'play', log:[], feed:[], say:{},
     pendingDrawn:null, awaiting:-1, aiThinking:-1, slap:null, slapRes:null, catchable:-1, unoWindow:-1,
-    lastResult:null, turnAt:Date.now()});
+    lastResult:null, stack:null, turnAt:Date.now()});
   log(`第 ${S.round} 局开始，@${S.starter}先出`);
   render();
   startTurn();
@@ -835,6 +844,19 @@ async function startTurn(){
 async function aiTurn(i){
   const p = S.players[i];
   let opts;
+  if (S.stack){
+    const adds = p.hand.filter(c => playable(c, p.hand));
+    if (adds.length && (DIFF[S.cfg.diff].smart > 0 || Math.random() < .6)){
+      const card = adds.find(c => c.v === 'd2') || adds[0];            // keep the +4 for later when a +2 will do
+      await playCard(i, card, card.c === 'w' ? aiColor(p.hand) : null);
+      return;
+    }
+    const k = S.stack.n; S.stack = null;
+    drawCards(i, k); log(`@${i}摸走累计的 ${k} 张，停一轮`); render();
+    await wait(700);
+    S.current = nextIdx(1); startTurn();
+    return;
+  }
   if (S.pendingDrawn != null){
     const c = p.hand.find(x => x.id === S.pendingDrawn); S.pendingDrawn = null;
     if (c && playable(c, p.hand)) opts = [c];
@@ -898,9 +920,16 @@ async function playCard(pi, card, chosen){
   if (card.v === 'skip'){ steps = 2; log(`@${nextIdx(1)}被跳过`); }
   else if (card.v === 'rev'){ S.dir *= -1; if (n === 2) steps = 2; log(n === 2 ? `反转：@${nextIdx(1)}停一轮` : '出牌方向反过来了'); }
   else if (card.v === 'd2' || card.v === 'wd4'){
-    const victim = nextIdx(1); const k = card.v === 'd2' ? 2 : 4;
-    drawCards(victim, k);
-    log(`@${victim}摸 ${k} 张，停一轮`); steps = 2;
+    const k = card.v === 'd2' ? 2 : 4;
+    if (S.cfg.stack){
+      S.stack = {n: (S.stack ? S.stack.n : 0) + k, t: (card.v === 'wd4' || (S.stack && S.stack.t === 'wd4')) ? 'wd4' : 'd2'};
+      if (p.hand.length === 0){ const victim = nextIdx(1); drawCards(victim, S.stack.n); log(`@${victim}摸走累计的 ${S.stack.n} 张`); S.stack = null; }
+      else log(`加牌累计 +${S.stack.n}，看@${nextIdx(1)}接不接`);
+    } else {
+      const victim = nextIdx(1);
+      drawCards(victim, k);
+      log(`@${victim}摸 ${k} 张，停一轮`); steps = 2;
+    }
   }
   render();
   if (p.hand.length === 0){ await wait(700); endRound(pi); return; }
@@ -1008,6 +1037,17 @@ function intentPlay(seat, cardId, color){
 function intentDraw(seat){
   if (!canAct(seat) || S.pendingDrawn != null) return;
   S.awaiting = -1;
+  if (S.stack){                                       // not adding to the stack = take all of it and sit this turn out
+    run(async () => {
+      const k = S.stack.n; S.stack = null;
+      drawCards(seat, k);
+      log(`@${seat}摸走累计的 ${k} 张，停一轮`);
+      render();
+      await wait(700);
+      S.current = nextIdx(1); startTurn();
+    });
+    return;
+  }
   run(async () => {
     const got = drawCards(seat, 1);
     if (!got.length){ log(`@${seat}没牌可摸，这轮跳过`); render(); await wait(500); S.current = nextIdx(1); startTurn(); return; }
@@ -1112,7 +1152,8 @@ function onHandClick(e){
   if (S.pendingDrawn != null && card.id !== S.pendingDrawn){ shake(); toast('摸牌后只能出刚摸到的那张，或者选「不出」'); return; }
   if (!playable(card, me.hand)){
     shake();
-    if (card.v === 'wd4') toast(`手里还有${CN[S.color]}色的牌，不能出 +4`);
+    if (S.stack) toast(S.stack.t === 'wd4' ? `前面叠了 +4，只能接 +4，或者摸 ${S.stack.n} 张` : `只能接 +2 或 +4，或者摸 ${S.stack.n} 张`);
+    else if (card.v === 'wd4') toast(`手里还有${CN[S.color]}色的牌，不能出 +4`);
     else toast(`要出${CN[S.color]}色，或者跟顶牌一样的「${VNAME(topCard().v)}」`);
     return;
   }
@@ -1135,7 +1176,7 @@ function render(){
     setTimeout(render, 1750);
     if (!reduceMotion()){ flyPlan = {card: topNow, by: topNow.by}; flyingTopId = topNow.id; }
   }
-  $('#roundinfo').textContent = `第 ${S.round} 局 · ${S.cfg.target ? '先到 ' + S.cfg.target + ' 分' : '单局定胜负'}`;
+  $('#roundinfo').textContent = `第 ${S.round} 局 · ${S.cfg.target ? '先到 ' + S.cfg.target + ' 分' : '单局定胜负'}${S.cfg.stack ? ' · 加牌可叠加' : ''}`;
 
   for (const [k, v] of Object.entries(S.say || {})){
     const key = k + ':' + v[1];
@@ -1213,13 +1254,16 @@ function render(){
   else if (S.unoWindow === mySeat){ st = '只剩 1 张，快喊 UNO！'; cls = 'alert'; }
   else if (S.phase === 'roundEnd') st = '这一局结束了';
   else if (S.phase === 'slapResult') st = '抢0 结算中';
+  else if (act_ && S.stack){ st = `接一张${S.stack.t === 'wd4' ? ' +4' : ' +2 或 +4'}，或者摸 ${S.stack.n} 张`; cls = 'alert'; }
   else if (act_ && S.pendingDrawn != null){ st = '摸到能出的牌：点它出，或者不出'; cls = 'go'; }
   else if (act_){ st = me.hand.some(c => playable(c, me.hand)) ? '轮到你了' : '没有能出的牌，摸一张'; cls = 'go'; }
   else if (S.current === mySeat) st = locked() ? '发送中…' : '出牌中';
-  else { st = `等${who(S.current)}出牌`; if (nxt === mySeat && S.phase === 'play') st += '，下一个是你'; }
+  else { st = `等${who(S.current)}出牌${S.stack ? `（累计 +${S.stack.n}）` : ''}`; if (nxt === mySeat && S.phase === 'play') st += '，下一个是你'; }
   const se = $('#status'); se.textContent = st; se.className = 'status ' + cls;
 
   $('#btnDraw').disabled = !canDraw;
+  $('#btnDraw').innerHTML = S.stack && act_ ? `摸 ${S.stack.n} 张<kbd>D</kbd>` : '摸牌<kbd>D</kbd>';
+  const sbg = $('#stackBadge'); sbg.hidden = !S.stack; if (S.stack) sbg.innerHTML = `+${S.stack.n}<small>待摸</small>`;
   $('#btnPass').hidden = !(act_ && S.pendingDrawn != null);
   const said = !!me && me.saidUno && me.hand.length > 0 && me.hand.length <= 2;
   const ub = $('#btnUno');
@@ -1410,6 +1454,7 @@ function resetBoard(){
   $('#colorchip').innerHTML = '<i style="--c:var(--muted)"></i>当前颜色 <b>—</b>';
   $('#dirhint').textContent = ''; $('#roundinfo').textContent = ''; $('#meExtra').innerHTML = '';
   $('#btnDraw').disabled = true; $('#btnUno').disabled = true; $('#btnPass').hidden = true;
+  $('#stackBadge').hidden = true; $('#btnDraw').innerHTML = '摸牌<kbd>D</kbd>';
   $('#me').classList.remove('turn');
   resetView();
 }
@@ -1429,8 +1474,8 @@ function encodeState(){
     d: S.deck.length,
     x: S.discard.slice(-3).map(c => [c.id, Math.round(c.rot || 0), c.chosen || '', c.by == null ? -1 : c.by]),
     c: S.color, dir: S.dir, cur: S.current, aw: S.awaiting, pd: S.pendingDrawn == null ? -1 : S.pendingDrawn,
-    ph: S.phase, rd: S.round,
-    cfg: {t: S.cfg.target, pen: S.cfg.pen, fs: S.cfg.falseSlap ? 1 : 0, df: S.cfg.diff},
+    ph: S.phase, rd: S.round, sk: S.stack ? [S.stack.n, S.stack.t === 'wd4' ? 1 : 0] : 0,
+    cfg: {t: S.cfg.target, pen: S.cfg.pen, fs: S.cfg.falseSlap ? 1 : 0, df: S.cfg.diff, sk: S.cfg.stack ? 1 : 0},
     sl: S.slap ? {id: S.slap.id, tm: S.slap.times, pa: S.slap.parts} : null,
     sr: S.slapRes || null,
     ca: S.catchable, uw: S.unoWindow,
@@ -1448,7 +1493,8 @@ function decodeState(st){
     players, deck: {length: num(st.d, 0)}, discard, color: COLORS.includes(st.c) ? st.c : 'r', dir: st.dir === -1 ? -1 : 1,
     current: num(st.cur, 0), awaiting: num(st.aw, -1), pendingDrawn: num(st.pd, -1) >= 0 ? st.pd : null,
     phase: String(st.ph || 'play'), round: num(st.rd, 1),
-    cfg: {target: num(cfg.t, 500), pen: num(cfg.pen, 2), falseSlap: !!cfg.fs, diff: DIFF[cfg.df] ? cfg.df : 'normal'},
+    stack: Array.isArray(st.sk) ? {n: num(st.sk[0], 0), t: st.sk[1] ? 'wd4' : 'd2'} : null,
+    cfg: {target: num(cfg.t, 500), pen: num(cfg.pen, 2), falseSlap: !!cfg.fs, diff: DIFF[cfg.df] ? cfg.df : 'normal', stack: !!cfg.sk},
     slap: st.sl ? {id: st.sl.id, times: st.sl.tm || {}, parts: st.sl.pa || []} : null,
     slapRes: st.sr && Array.isArray(st.sr.res) ? st.sr : null,
     catchable: num(st.ca, -1), unoWindow: num(st.uw, -1),
@@ -1493,7 +1539,7 @@ function lobbyPayload(){
     seats: clampSeats(),
     list: [[net.uid + ':' + net.sid, net.nick, 1], ...net.roster.slice(0, 15).map(r => [r.pid, r.name, 0])],
     map: net.seatMap.map(pid => pid ? [pid, seatName(pid)] : 0),
-    cfg: {df: settings.diff, pen: settings.slapPen, t: settings.target, fs: settings.falseSlap ? 1 : 0},
+    cfg: {df: settings.diff, pen: settings.slapPen, t: settings.target, fs: settings.falseSlap ? 1 : 0, sk: settings.stack ? 1 : 0},
   };
 }
 function broadcast(){
@@ -1761,6 +1807,7 @@ function renderLobby(){
     buildSeg($('#lobDiff'), DIFF_OPTS, settings.diff, v => { settings.diff = v; saveSettings(); renderLobby(); broadcast(); });
     buildSeg($('#lobPen'), PEN_OPTS, settings.slapPen, v => { settings.slapPen = +v; saveSettings(); renderLobby(); broadcast(); });
     buildSeg($('#lobTarget'), TARGET_OPTS, settings.target, v => { settings.target = +v; saveSettings(); renderLobby(); broadcast(); });
+    buildSeg($('#lobStack'), STACK_OPTS, settings.stack ? 1 : 0, v => { settings.stack = +v === 1; saveSettings(); renderLobby(); broadcast(); });
     $('#lobFalse').checked = !!settings.falseSlap;
   }
   let wait = '';
@@ -1771,7 +1818,7 @@ function renderLobby(){
   } else if (!net.lob) wait = '正在找房间…（确认房间号是对的）';
   else {
     const c = net.lob.cfg || {};
-    wait = `电脑水平 ${(DIFF[c.df] || DIFF.normal).label} · 抢0 罚摸 ${c.pen || 2} 张 · ${c.t ? '先到 ' + c.t + ' 分' : '单局定胜负'}。`
+    wait = `电脑水平 ${(DIFF[c.df] || DIFF.normal).label} · 抢0 罚摸 ${c.pen || 2} 张 · ${c.t ? '先到 ' + c.t + ' 分' : '单局定胜负'} · 加牌${c.sk ? '可叠加' : '不叠加'}。`
       + (iWatch ? '座位满了，开局后你观战。' : '等房主开始。');
   }
   $('#lobWait').textContent = wait;
@@ -1813,6 +1860,8 @@ function buildSetup(){
   buildSeg($('#segDiff'), DIFF_OPTS, settings.diff, v => { settings.diff = v; saveSettings(); buildSetup(); });
   buildSeg($('#segPen'), PEN_OPTS, settings.slapPen, v => { settings.slapPen = +v; saveSettings(); buildSetup(); });
   buildSeg($('#segTarget'), TARGET_OPTS, settings.target, v => { settings.target = +v; saveSettings(); buildSetup(); });
+  buildSeg($('#segStack'), STACK_OPTS, settings.stack ? 1 : 0, v => { settings.stack = +v === 1; saveSettings(); buildSetup(); });
+  $('#stackHint').textContent = settings.stack ? '+2 能接 +2/+4，叠了 +4 只能接 +4' : '+2/+4 直接让下家摸';
   $('#nHint').textContent = `你 + ${settings.n - 1} 个电脑`;
   $('#diffHint').textContent = DIFF[settings.diff].hint;
   $('#optFalse').checked = !!settings.falseSlap;
