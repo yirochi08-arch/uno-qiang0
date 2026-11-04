@@ -5,6 +5,8 @@
 - 游戏页：`index.html`（由 `build.py` 生成，单文件，字体和联机库都内嵌在里面）
 - 源码：`src/page.html`
 - 联机：经 EMQX 的免费公共 MQTT 服务器转发（国内线路优先，连不上换海外线路）。整局牌在房主的页面上运行，房主请一直开着页面。
+- 进房间后在圆桌上点空位选座，出牌按座位顺时针轮；没选座的人开局时自动补空位，剩下的由电脑坐。
+- Claude 版：`claude/artifact.html`，直接发布成 claude.ai artifact，联机走 artifact 自带的 room 能力（只有登录 claude.ai 的人能进房间）。游戏逻辑和网页版一致，改功能时两边都要改。
 
 改完 `src/page.html` 后运行：
 

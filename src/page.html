@@ -220,6 +220,24 @@ kbd{font:600 10px/1 var(--f-display);padding:2px 4px;border-radius:4px;border:1p
 .roster .rname{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;flex:1}
 .rtag{font-size:10px;line-height:1;padding:3px 6px;border-radius:999px;background:rgba(255,255,255,.1);color:var(--muted);flex:none}
 .rtag.me{background:var(--gold);color:#2b1b05}
+.tablemap{position:relative;width:100%;max-width:440px;margin:2px auto 0;aspect-ratio:4/3}
+.tablemap .felt{position:absolute;left:24%;right:24%;top:26%;bottom:26%;border-radius:50%;background:radial-gradient(circle at 50% 40%,var(--felt-hi),var(--felt));border:1px solid var(--line);display:grid;place-items:center;text-align:center;color:var(--muted);font-size:12px;line-height:1.4}
+.tablemap .felt b{display:block;font:900 24px/1 var(--f-body);color:var(--gold)}
+.sb{position:absolute;translate:-50% -50%;width:clamp(62px,18vw,92px);min-height:50px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 4px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:700 12px/1.15 var(--f-body);text-align:center;appearance:none}
+.sb .av{width:24px;height:24px;font-size:11px}
+.sb .sn{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sb .st{font-size:10px;font-weight:500;color:var(--muted)}
+.sb .no{position:absolute;left:6px;top:4px;font:800 10px/1 var(--f-display);color:var(--muted)}
+.sb.empty{border-style:dashed;color:var(--muted);background:rgba(255,255,255,.03)}
+button.sb{cursor:pointer;touch-action:manipulation}
+button.sb.empty:hover{border-color:var(--gold);color:var(--gold)}
+.sb.me{border-color:var(--gold);background:#3a2e1c;box-shadow:0 0 0 2px rgba(255,211,92,.25)}
+.sb.me .sn{color:var(--gold)}
+.sb.ai .sn{color:var(--muted)}
+.sb.pend{border-color:var(--gold);color:var(--gold);animation:breathe .6s ease-in-out infinite alternate}
+.tablemap.many .sb{width:clamp(52px,15vw,82px);min-height:44px;padding:4px 3px;font-size:11px}
+.tablemap.many .sb .av{width:20px;height:20px;font-size:10px}
+@media (max-width:480px){.tablemap{aspect-ratio:1/1}}
 .rules{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:8px;color:var(--ink);max-width:62ch}
 .rules b{color:var(--gold)}
 .rules .hot0{color:var(--ink);background:var(--red);padding:0 5px;border-radius:5px}
@@ -388,7 +406,12 @@ kbd{font:600 10px/1 var(--f-display);padding:2px 4px;border-radius:4px;border:1p
       <button class="btn small" id="btnCopyCode" type="button">复制邀请</button>
     </div>
     <p class="lede left">点「复制邀请」发给朋友：打开链接、填个昵称点「加入」就能进来，不用注册登录。</p>
-    <div class="field"><div class="flabel"><span>在房间里</span><b id="lobCount"></b></div><ul class="roster" id="lobRoster"></ul></div>
+    <div class="field">
+      <div class="flabel"><span>选座位</span><b id="lobCount"></b></div>
+      <div class="tablemap" id="lobMap"></div>
+      <p class="note" id="lobSeatHint"></p>
+      <ul class="roster" id="lobRoster"></ul>
+    </div>
     <div class="stack" id="lobHostOpts">
       <div class="field"><div class="flabel"><span>座位数</span><b>空位由电脑补上</b></div><div class="seg" id="lobSeats"></div></div>
       <div class="field"><div class="flabel"><span>电脑水平</span></div><div class="seg" id="lobDiff"></div></div>
@@ -416,7 +439,7 @@ kbd{font:600 10px/1 var(--f-display);padding:2px 4px;border-radius:4px;border:1p
       <li><b>跳过</b>：下家停一轮。<b>反转</b>：出牌方向掉头，两人局等于跳过。<b>+2 / +4</b>：下家摸牌并停一轮，不能叠加。</li>
       <li><span class="hot0">抢0</span> 任何人出了 0，所有人抢着拍（点「拍」或按空格），最慢的人罚摸牌，张数在设置里选。没有 0 时乱拍罚 1 张（可关）。联机时每人的反应时间按自己屏幕上看到 0 的那一刻算。</li>
       <li><b>UNO</b>：出到只剩 1 张时要喊。可以在剩 2 张时先按，也可以出完马上按。被别人抢先抓到，罚摸 2 张。有人忘喊时，他的座位上会出现「抓」，点它就让他罚 2 张。</li>
-      <li><b>联机</b>：房主开房间，朋友输入房间号加入，空位由电脑补上。有人掉线，电脑先代打，回来后接着自己出；轮到谁超过 45 秒没动，电脑替他出一手。整局牌在房主的页面上运行，房主请一直开着、别切到后台。</li>
+      <li><b>联机</b>：房主开房间，朋友输入房间号加入。进房间后点圆桌上的空位选座，出牌按座位顺时针轮；没选座的人自动补空位，剩下的由电脑坐。有人掉线，电脑先代打，回来后接着自己出；轮到谁超过 45 秒没动，电脑替他出一手。整局牌在房主的页面上运行，房主请一直开着、别切到后台。</li>
       <li><b>计分</b>：赢家拿走其他人手里的牌分。数字按面值，跳过/反转/+2 各 20，万能牌和 +4 各 50。先到 500 分赢整场。</li>
     </ul>
     <div class="row-actions"><button class="btn primary" id="btnRulesClose" type="button">知道了</button></div>
@@ -621,11 +644,16 @@ const NetRoom = (() => {
         client.on('offline', () => { if (active === c) statusSubs.forEach(f => f(false)); });
         client.on('error', () => {});
       }
+      let lastBeat = Date.now();
       const hb = setInterval(() => {
         if (closed) return;
         publishNow();
-        const now = Date.now();
-        for (const [id, o] of others) if (now - o.heard > 75000){ others.delete(id); emit({left: [o.peer]}); }
+        const now = Date.now(), slept = now - lastBeat > 25000;   // this page was frozen: its silence says nothing about the others
+        lastBeat = now;
+        for (const [id, o] of others){
+          if (slept) o.heard = now;
+          else if (now - o.heard > 75000){ others.delete(id); emit({left: [o.peer]}); }
+        }
       }, 15000);
       if (asHost){
         start(LINES[0]);
@@ -1429,10 +1457,42 @@ function decodeState(st){
   };
 }
 const clampSeats = () => Math.min(10, Math.max(2, settings.seats, net ? Math.min(10, net.roster.length + 1) : 2));
+const hostPid = () => net.uid + ':' + net.sid;
+const seatName = pid => pid === hostPid() ? net.nick : ((net.roster.find(r => r.pid === pid) || {}).name || '玩家');
+/* host only: keep net.seatMap (seat index -> pid of whoever chose it) in step with who is here and what they asked for */
+function resolveSeats(){
+  const N = clampSeats();
+  const map = net.seatMap = Array.from({length: N}, (_, i) => net.seatMap[i] || null);
+  const here = new Set([hostPid(), ...net.roster.map(r => r.pid)]);
+  map.forEach((pid, i) => { if (pid && !here.has(pid)) map[i] = null; });
+  for (const r of net.roster){                      // earlier arrivals win a seat two people ask for at once
+    const cur = map.indexOf(r.pid);
+    if (r.want === -1){ if (cur >= 0) map[cur] = null; }
+    else if (r.want >= 0 && r.want < N && r.want !== cur && !map[r.want]){ if (cur >= 0) map[cur] = null; map[r.want] = r.pid; }
+  }
+}
+function hostSit(i){
+  resolveSeats();
+  const map = net.seatMap, me = hostPid(), cur = map.indexOf(me);
+  if (i === cur) map[cur] = null;
+  else if (i >= 0 && i < map.length && !map[i]){ if (cur >= 0) map[cur] = null; map[i] = me; }
+  else return;
+  renderLobby(); broadcast();
+}
+function clientSit(i){
+  const map = (net.lob && Array.isArray(net.lob.map)) ? net.lob.map : [];
+  const cur = map.findIndex(a => a && String(a[0]).endsWith(':' + net.sid));
+  const want = i === cur ? -1 : i;
+  net.want = want; net.wantAt = Date.now();
+  net.ch.presence({want}).catch(() => {});
+  renderLobby();
+}
 function lobbyPayload(){
+  resolveSeats();
   return {
     seats: clampSeats(),
     list: [[net.uid + ':' + net.sid, net.nick, 1], ...net.roster.slice(0, 15).map(r => [r.pid, r.name, 0])],
+    map: net.seatMap.map(pid => pid ? [pid, seatName(pid)] : 0),
     cfg: {df: settings.diff, pen: settings.slapPen, t: settings.target, fs: settings.falseSlap ? 1 : 0},
   };
 }
@@ -1474,7 +1534,7 @@ async function enterRoom(asHost, codeIn){
   net = {room, ch, named: true, code, uid: uid || localUid(), sid: Math.random().toString(36).slice(2, 10), nick,
     seq:0, acts:[], lastN:{}, roster:[], firstSeen:{}, joinSeq:0, present:new Set(), stateN:0, sent:'',
     hostPeer:null, hostPresent:false, hostSeenAt:0, lastHostPresence:null, lob:null, inLobby:true, online:1,
-    slapSeen:{id:null, t:0}, slapEndSeen:0, joinedAt:Date.now(), warned:false, unsub:null, timer:null};
+    slapSeen:{id:null, t:0}, slapEndSeen:0, seatMap:[], want:null, wantAt:0, joinedAt:Date.now(), warned:false, unsub:null, timer:null};
   mode = asHost ? 'host' : 'client';
   mySeat = asHost ? 0 : -1;
   ['#setup','#roundend','#slapres','#colorpick'].forEach(s => $(s).hidden = true);
@@ -1521,7 +1581,7 @@ function hostPeers(peers){
     const pid = uid + ':' + sid;
     if (seen.has(pid)) continue; seen.add(pid);
     if (!net.firstSeen[pid]) net.firstSeen[pid] = ++net.joinSeq;
-    list.push({pid, uid, sid, name: cleanName(pr.name) || '玩家', acts: Array.isArray(pr.acts) ? pr.acts : []});
+    list.push({pid, uid, sid, name: cleanName(pr.name) || '玩家', acts: Array.isArray(pr.acts) ? pr.acts : [], want: Number.isInteger(pr.want) ? pr.want : -1});
   }
   list.sort((a, b) => net.firstSeen[a.pid] - net.firstSeen[b.pid]);
   net.roster = list;
@@ -1608,6 +1668,12 @@ function clientTick(){
     toast(net.hostSeenAt ? '房主暂时不在线，等房主回来，或者离开房间' : '还没找到这个房间，确认房间号对不对');
   }
   if (lockN != null && Date.now() - lockT > 3000){ lockN = null; render(); }
+  if (net.want != null && net.lob){                 // a seat request the host has not granted: give up after 4 s
+    const map = Array.isArray(net.lob.map) ? net.lob.map : [];
+    const cur = map.findIndex(a => a && String(a[0]).endsWith(':' + net.sid));
+    if (cur === net.want || (net.want === -1 && cur < 0)) net.want = null;
+    else if (Date.now() - net.wantAt > 4000){ toast('这个位置被人先坐了，换一个吧'); net.want = null; net.ch.presence({want: cur}).catch(() => {}); }
+  }
   updateRoomChip();
   if (!$('#lobby').hidden) renderLobby();
 }
@@ -1642,11 +1708,52 @@ function renderLobby(){
     seats = inGame ? S.players.length : (net.lob ? Math.min(10, Math.max(2, +net.lob.seats || 2)) : 0);
   }
   const mine = r => r.pid.endsWith(':' + net.sid);
-  $('#lobRoster').innerHTML = list.length ? list.map((r, k) => {
-    const spec = !inGame && seats && k >= seats;
-    return `<li class="${spec ? 'spec' : ''}"><span class="av" style="--av:${AV[k % AV.length]}">${esc([...r.name][0] || '?')}</span><span class="rname">${esc(r.name)}</span>${r.isHost ? '<span class="rtag">房主</span>' : ''}${mine(r) ? '<span class="rtag me">你</span>' : ''}${spec ? '<span class="rtag">观战</span>' : ''}</li>`;
-  }).join('') : `<li class="empty">${net.hostPresent ? '正在进入房间…' : '还没找到房主…'}</li>`;
-  $('#lobCount').textContent = seats ? `${list.length} 人 · ${seats} 个座位` : '';
+  // the round table: seat i -> {pid, name, kind, isHost, isMe} or null
+  let map = [];
+  if (inGame) map = S.players.map((p, i) => ({pid: '', name: p.name, kind: p.kind === 'ai' ? 'ai' : 'person', isMe: i === mySeat}));
+  else if (host){ resolveSeats(); map = net.seatMap.map(pid => pid ? {pid, name: seatName(pid), kind: 'person', isHost: pid === hostPid()} : null); }
+  else if (net.lob){
+    const hostP = (list.find(r => r.isHost) || {}).pid;
+    map = (Array.isArray(net.lob.map) ? net.lob.map : []).slice(0, seats).map(a => a ? {pid: String(a[0]), name: cleanName(a[1]) || '玩家', kind: 'person', isHost: String(a[0]) === hostP} : null);
+    while (map.length < seats) map.push(null);
+  }
+  if (!inGame) map.forEach(e => { if (e) e.isMe = mine(e); });
+  const canPick = !inGame && (host || !!net.lob);
+  const myAt = map.findIndex(e => e && e.isMe);
+  const pendAt = !host && net.want != null && net.want >= 0 && net.want !== myAt ? net.want : -1;
+  let tbl = '';
+  if (map.length){
+    tbl = `<div class="felt"><div><b>↻</b>${inGame ? '这一场的座位' : '按座位顺时针出牌'}</div></div>`;
+    map.forEach((e, i) => {
+      const ang = -Math.PI / 2 + i * 2 * Math.PI / map.length;
+      const pos = `left:${(50 + 41 * Math.cos(ang)).toFixed(1)}%;top:${(50 + 41 * Math.sin(ang)).toFixed(1)}%`;
+      const no = `<span class="no">${i + 1}</span>`;
+      if (!e){
+        if (canPick && i === pendAt) tbl += `<div class="sb empty pend" style="${pos}">${no}入座中…</div>`;
+        else if (canPick) tbl += `<button type="button" class="sb empty" data-sit="${i}" style="${pos}">${no}坐这里</button>`;
+        else tbl += `<div class="sb empty" style="${pos}">${no}空位</div>`;
+        return;
+      }
+      const sub = e.isMe ? (canPick ? '点一下站起来' : '') : e.kind === 'ai' ? '电脑' : (e.isHost ? '房主' : '');
+      const inner = `${no}<span class="av" style="--av:${AV[i % AV.length]}">${esc([...e.name][0] || '?')}</span><span class="sn">${esc(e.isMe ? '你' : e.name)}</span>${sub ? `<span class="st">${sub}</span>` : ''}`;
+      const cls = `sb${e.isMe ? ' me' : ''}${e.kind === 'ai' ? ' ai' : ''}`;
+      tbl += e.isMe && canPick ? `<button type="button" class="${cls}" data-sit="${i}" style="${pos}">${inner}</button>` : `<div class="${cls}" style="${pos}">${inner}</div>`;
+    });
+  }
+  $('#lobMap').innerHTML = tbl;
+  $('#lobMap').classList.toggle('many', map.length >= 7);
+  // people without a chosen seat: they take the empty seats in arrival order when the game starts
+  const seatedPids = new Set(map.filter(e => e && e.pid).map(e => e.pid));
+  const free = map.filter(e => !e).length;
+  const unseated = inGame ? [] : list.filter(r => !seatedPids.has(r.pid));
+  const iWatch = !inGame && unseated.findIndex(mine) >= free;
+  const ro = $('#lobRoster');
+  if (!inGame && !host && !net.lob) ro.innerHTML = `<li class="empty">${net.hostPresent ? '正在进入房间…' : '还没找到房主…'}</li>`;
+  else ro.innerHTML = unseated.map((r, k) => `<li class="${k >= free ? 'spec' : ''}"><span class="av" style="--av:${AV[(list.indexOf(r)) % AV.length]}">${esc([...r.name][0] || '?')}</span><span class="rname">${esc(r.name)}</span>${r.isHost ? '<span class="rtag">房主</span>' : ''}${mine(r) ? '<span class="rtag me">你</span>' : ''}<span class="rtag">${k >= free ? '观战' : '还没选座'}</span></li>`).join('');
+  ro.hidden = !ro.innerHTML;
+  $('#lobSeatHint').textContent = inGame ? '座位在开局时定下，下一场开始前可以换。'
+    : canPick ? '点空位坐下，点自己的位置站起来。没选座的人开局时按进房顺序补空位，剩下的空位由电脑坐。' : '';
+  $('#lobCount').textContent = seats ? (inGame ? `${seats} 个座位` : `${list.length} 人 · ${seats} 个座位`) : '';
   $('#lobHostOpts').hidden = !(host && !inGame);
   if (host && !inGame){
     const minSeats = Math.min(10, net.roster.length + 1);
@@ -1664,9 +1771,8 @@ function renderLobby(){
   } else if (!net.lob) wait = '正在找房间…（确认房间号是对的）';
   else {
     const c = net.lob.cfg || {};
-    const myIdx = list.findIndex(mine);
     wait = `电脑水平 ${(DIFF[c.df] || DIFF.normal).label} · 抢0 罚摸 ${c.pen || 2} 张 · ${c.t ? '先到 ' + c.t + ' 分' : '单局定胜负'}。`
-      + (myIdx >= seats ? '座位满了，开局后你观战。' : '等房主开始。');
+      + (iWatch ? '座位满了，开局后你观战。' : '等房主开始。');
   }
   $('#lobWait').textContent = wait;
   $('#btnLobStart').hidden = !(host && !inGame);
@@ -1674,15 +1780,21 @@ function renderLobby(){
   $('#btnLobEnd').hidden = !(host && inGame);
 }
 function startOnlineMatch(){
+  resolveSeats();
   const N = clampSeats();
-  const players = [mkPlayer(net.nick, 'me', net.uid, net.sid)];
-  for (const r of net.roster.slice(0, N - 1)) players.push(mkPlayer(r.name, 'remote', r.uid, r.sid));
-  const taken = new Set(players.map(p => p.name));
+  const me = {pid: hostPid(), name: net.nick, kind: 'me', uid: net.uid, sid: net.sid};
+  const people = [me, ...net.roster.map(r => ({pid: r.pid, name: r.name, kind: 'remote', uid: r.uid, sid: r.sid}))];
+  const slots = net.seatMap.slice(0, N).map(pid => people.find(p => p.pid === pid) || null);
+  while (slots.length < N) slots.push(null);
+  const waiting = people.filter(p => !slots.includes(p));        // no chosen seat: fill empty seats in arrival order
+  for (let i = 0; i < N && waiting.length; i++) if (!slots[i]) slots[i] = waiting.shift();
+  if (!slots.includes(me)) slots[N - 1] = me;                     // only with more than 10 people: the host always plays
+  const taken = new Set(slots.filter(Boolean).map(p => p.name));
   const names = AI_NAMES.filter(x => !taken.has(x));
   let k = 0;
-  while (players.length < N) players.push(mkPlayer(names[k++] || ('电脑' + k), 'ai'));
+  const players = slots.map(p => p ? mkPlayer(p.name, p.kind, p.uid, p.sid) : mkPlayer(names[k++] || ('电脑' + k), 'ai'));
   S = {v:2, players, round:1, starter: Math.floor(Math.random() * N), cfg: cfgFromSettings()};
-  net.inLobby = false; mode = 'host'; mySeat = 0;
+  net.inLobby = false; mode = 'host'; mySeat = slots.indexOf(me);
   resetView();
   newRound();
 }
@@ -1783,6 +1895,10 @@ $('#btnLobClose').addEventListener('click', () => {
 });
 $('#btnLobEnd').addEventListener('click', () => { if (mode === 'host') endToLobby(); });
 $('#btnLobLeave').addEventListener('click', leaveRoom);
+$('#lobMap').addEventListener('click', e => {
+  const b = e.target.closest('[data-sit]'); if (!b || !net) return;
+  if (mode === 'host') hostSit(+b.dataset.sit); else clientSit(+b.dataset.sit);
+});
 $('#roundend').addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b) return;
   const a = b.dataset.act;

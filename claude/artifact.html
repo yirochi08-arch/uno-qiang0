@@ -1,0 +1,1810 @@
+<title>UNO 抢0版</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=Rubik:ital,wght@0,600;0,800;1,800;1,900&display=swap">
+<style>
+/* Layout: one card-table screen. Opponents' seats across the top, draw/discard piles and the slap pad in the middle, your hand docked at the bottom. Single dark-felt look by choice. */
+:root{
+  color-scheme: dark;
+  --felt:#241a2c;
+  --felt-hi:#3b2b46;
+  --panel:#1a1220;
+  --ink:#f6f0f8;
+  --muted:#b7a6c4;
+  --line:rgba(246,240,248,.13);
+  --red:#e0403e; --yellow:#f2b40c; --green:#26a150; --blue:#2470d4; --wildbg:#17111b;
+  --gold:#ffd35c;
+  --paper:#fbf8f2;
+  --f-display:"Rubik","Arial Black",system-ui,sans-serif;
+  --f-body:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background-color:var(--felt);
+  background-image:radial-gradient(rgba(255,255,255,.035) 1px,transparent 1.2px),radial-gradient(130% 90% at 50% 42%,var(--felt-hi) 0%,var(--felt) 64%);
+  background-size:5px 5px,100% 100%;
+  background-attachment:fixed;
+  color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45;
+  -webkit-tap-highlight-color:transparent;
+}
+button{font-family:inherit}
+kbd{font:600 10px/1 var(--f-display);padding:2px 4px;border-radius:4px;border:1px solid currentColor;opacity:.55;margin-left:4px}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+.app{
+  max-width:1120px;margin:0 auto;min-height:100%;
+  display:flex;flex-direction:column;gap:14px;
+  padding-block:12px 18px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+
+/* header */
+.bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:8px}
+.logo{font:900 italic 30px/1 var(--f-display);letter-spacing:-.02em;color:var(--gold);text-shadow:2px 2px 0 #000;margin:0}
+.stamp0{display:inline-block;font:900 13px/1 var(--f-body);font-style:normal;color:#fff;background:var(--red);padding:5px 8px;border-radius:7px;transform:rotate(-6deg);box-shadow:0 2px 0 #7d1a1c;text-shadow:none;letter-spacing:0}
+.bar-right{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.roundinfo{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums;margin-right:4px}
+.roomchip{font-size:12px;line-height:1;padding:6px 10px;border-radius:999px;background:rgba(255,211,92,.12);color:var(--gold);border:1px solid rgba(255,211,92,.35);font-variant-numeric:tabular-nums;white-space:nowrap}
+.roomchip.warn{background:var(--red);color:#fff;border-color:transparent}
+
+.btn{display:inline-flex;align-items:center;gap:4px;font:600 14px/1 var(--f-body);color:var(--ink);background:rgba(255,255,255,.08);border:1px solid var(--line);border-radius:999px;padding:10px 16px;cursor:pointer;transition:background .15s,transform .1s;touch-action:manipulation}
+.btn:hover:not(:disabled){background:rgba(255,255,255,.15)}
+.btn:active:not(:disabled){transform:translateY(1px)}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn.ghost{background:transparent}
+.btn.small{padding:8px 12px;font-size:13px}
+.btn.big{justify-content:center;padding:14px 18px;font-size:16px}
+.btn.primary{background:var(--gold);color:#2b1b05;border-color:transparent;font-weight:800}
+.btn.primary:hover:not(:disabled){background:#ffdd80}
+.btn.uno{background:var(--red);border-color:transparent;color:#fff;font:900 italic 15px/1 var(--f-display)}
+.btn.uno:hover:not(:disabled){background:#ec5654}
+.btn.uno.said{background:rgba(255,211,92,.14);color:var(--gold);border-color:rgba(255,211,92,.45);font-style:normal;font-family:var(--f-body)}
+.btn.uno.urgent{animation:urgent .42s ease-in-out infinite alternate}
+
+/* opponents */
+.opp-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:12px;letter-spacing:.06em;margin-bottom:10px}
+.seats{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 8px}
+.seat{position:relative;flex:0 1 158px;min-width:0;display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:14px;background:rgba(255,255,255,.045);border:1px solid var(--line);transition:background .2s,border-color .2s,box-shadow .2s}
+.seat.turn{background:rgba(255,211,92,.12);border-color:var(--gold);box-shadow:0 0 0 3px rgba(255,211,92,.14)}
+.av{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font:800 15px/1 var(--f-body);color:#fff;background:var(--av,#555);box-shadow:inset 0 -2px 0 rgba(0,0,0,.25)}
+.seat-main{min-width:0;flex:1}
+.seat-name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:5px}
+.seat-name .nm{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.seat-sub{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.cnt{font:800 italic 17px/1 var(--f-display);color:var(--ink);margin-right:2px}
+.tag{font:900 italic 10px/1 var(--f-display);padding:3px 5px;border-radius:5px;background:var(--gold);color:#2b1b05;flex:none}
+.tag2{font:700 10px/1 var(--f-body);padding:3px 5px;border-radius:5px;background:rgba(255,255,255,.12);color:var(--muted);flex:none}
+.nexttag{position:absolute;top:-9px;right:10px;font-size:10px;line-height:1;padding:3px 7px;border-radius:999px;background:var(--felt-hi);border:1px solid var(--line);color:var(--muted)}
+.stamp{position:absolute;right:-6px;bottom:-9px;z-index:2;font:800 11px/1 var(--f-body);color:#fff;background:var(--red);padding:4px 6px;border-radius:6px;rotate:-5deg;font-variant-numeric:tabular-nums;animation:pop .18s ease-out;white-space:nowrap}
+.say{position:absolute;left:28px;top:-13px;z-index:2;font:900 italic 13px/1 var(--f-display);color:#2b1b05;background:var(--gold);padding:5px 8px;border-radius:10px 10px 10px 2px;animation:pop .18s ease-out;white-space:nowrap}
+.catch{position:absolute;left:6px;bottom:-15px;z-index:3;border:0;cursor:pointer;font:900 12px/1 var(--f-body);color:#fff;background:var(--red);padding:6px 9px;border-radius:999px;box-shadow:0 3px 0 #7d1a1c;animation:urgent .42s ease-in-out infinite alternate;white-space:nowrap}
+
+/* table */
+.table{flex:1;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);grid-template-areas:"info piles slap";align-items:center;gap:22px;padding-block:6px;min-height:clamp(180px,30vh,320px)}
+.info{grid-area:info;display:flex;flex-direction:column;gap:10px;min-width:0;justify-self:end;width:100%;max-width:280px}
+.colorchip{display:inline-flex;align-self:flex-start;align-items:center;gap:8px;padding:5px 12px 5px 5px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid var(--line);font-size:13px}
+.colorchip i{width:24px;height:24px;border-radius:50%;background:var(--c);box-shadow:inset 0 -2px 0 rgba(0,0,0,.25)}
+.colorchip b{font-weight:800}
+.log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--muted);min-height:4.4em}
+.log li:last-child{color:var(--ink)}
+.piles{grid-area:piles;display:flex;gap:clamp(16px,4vw,32px);--w:clamp(64px,14vw,100px)}
+.pilecol{display:flex;flex-direction:column;align-items:center;gap:10px}
+.pilelabel{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.pile-draw{all:unset;position:relative;display:block;width:var(--w);aspect-ratio:2/3;border-radius:calc(var(--w)*.11)}
+.pile-draw .card{position:absolute;inset:0;width:100%}
+.pile-draw .card:nth-child(1){transform:translate(5px,5px)}
+.pile-draw .card:nth-child(2){transform:translate(2.5px,2.5px)}
+.pile-draw.can{cursor:pointer}
+.pile-draw.can::after{content:"";position:absolute;inset:-7px -2px -2px -7px;border-radius:calc(var(--w)*.16);border:2px dashed var(--gold);animation:breathe 1.1s ease-in-out infinite alternate}
+.pile-draw:focus-visible{outline:2px solid var(--gold);outline-offset:6px}
+.pile-discard{position:relative;width:var(--w);aspect-ratio:2/3}
+.pile-discard .card{position:absolute;inset:0;width:100%;transform:rotate(var(--rot,0deg))}
+.pile-discard .card.land{animation:land .3s cubic-bezier(.2,.8,.3,1.15)}
+.pile-discard.flash::after{content:"";position:absolute;inset:-12px;border-radius:18px;border:3px solid var(--gold);animation:ring .5s ease-out infinite;pointer-events:none}
+.flylayer{position:fixed;inset:0;pointer-events:none;z-index:45;overflow:hidden}
+.flyer{position:absolute;left:0;top:0;width:var(--w);transform-origin:50% 50%;will-change:transform;filter:drop-shadow(0 12px 18px rgba(0,0,0,.45))}
+.pile-discard .card.incoming{visibility:hidden}
+.seat.just{border-color:var(--jc);box-shadow:0 0 0 3px var(--jc),0 0 18px var(--jc)}
+.seat .mini{position:absolute;right:8px;top:50%;--w:24px;translate:0 -50%;rotate:8deg;z-index:2;animation:pop .2s ease-out}
+.pilelabel .dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--av);margin-right:5px;vertical-align:-1px}
+#discardBy{color:var(--ink);font-weight:700}
+.slapcell{grid-area:slap;justify-self:start;display:flex;flex-direction:column;align-items:center;gap:8px}
+.slap{all:unset;box-sizing:border-box;width:clamp(88px,22vw,132px);aspect-ratio:1;border-radius:50%;display:grid;place-items:center;align-content:center;background:radial-gradient(circle at 36% 30%,#ff8f7b,var(--red) 58%,#9e1f22);box-shadow:0 8px 0 #6d1418,0 14px 30px rgba(0,0,0,.45);cursor:pointer;text-align:center;font:900 clamp(30px,7vw,46px)/1 var(--f-body);color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.25);user-select:none;-webkit-user-select:none;touch-action:manipulation;transition:transform .06s,box-shadow .06s}
+.slap small{display:block;font:600 11px/1 var(--f-body);opacity:.8;margin-top:6px;text-shadow:none}
+.slap.hit{transform:translateY(6px);box-shadow:0 2px 0 #6d1418,0 6px 14px rgba(0,0,0,.45)}
+.slap.hot{animation:hot .38s ease-in-out infinite alternate}
+.slap:focus-visible{outline:3px solid var(--gold);outline-offset:4px}
+.slaphint{font-size:11px;color:var(--muted);text-align:center;max-width:12em}
+
+/* cards */
+.card{--cc:var(--red);position:relative;display:block;flex:none;width:var(--w);aspect-ratio:2/3;border-radius:calc(var(--w)*.11);background:var(--cc);color:var(--cc);overflow:hidden;box-shadow:inset 0 0 0 calc(var(--w)*.055) var(--paper),0 2px 0 rgba(0,0,0,.25),0 6px 14px rgba(0,0,0,.35)}
+.c-r{--cc:var(--red)} .c-y{--cc:var(--yellow)} .c-g{--cc:var(--green)} .c-b{--cc:var(--blue)} .c-w{--cc:var(--wildbg)}
+.card .oval{position:absolute;left:50%;top:50%;width:64%;height:94%;background:var(--paper);border-radius:50%;transform:translate(-50%,-50%) rotate(30deg)}
+.c-w .oval{background:conic-gradient(var(--red) 0 25%,var(--blue) 0 50%,var(--yellow) 0 75%,var(--green) 0)}
+.card .big{position:absolute;inset:0;display:grid;place-items:center;font:900 italic calc(var(--w)*.56)/1 var(--f-display);color:var(--cc);text-shadow:calc(var(--w)*.03) calc(var(--w)*.03) 0 #1b1416;letter-spacing:-.04em}
+.card .big svg{width:48%;height:auto;filter:drop-shadow(calc(var(--w)*.025) calc(var(--w)*.025) 0 #1b1416)}
+.v-d2 .big,.v-wd4 .big{font-size:calc(var(--w)*.4)}
+.c-w .big{color:#fff;text-shadow:calc(var(--w)*.025) calc(var(--w)*.025) 0 #000,0 0 calc(var(--w)*.08) rgba(0,0,0,.6)}
+.card .crn{position:absolute;font:900 italic calc(var(--w)*.2)/1 var(--f-display);color:#fff;text-shadow:1px 1px 0 rgba(0,0,0,.45);letter-spacing:-.03em}
+.card .crn svg{width:calc(var(--w)*.18);height:calc(var(--w)*.18);display:block}
+.card .tl{left:12%;top:8%}
+.card .br{right:12%;bottom:8%;transform:rotate(180deg)}
+.ul .big,.ul .crn{text-decoration:underline;text-decoration-thickness:.07em;text-underline-offset:.07em}
+.wdot{display:block;width:calc(var(--w)*.17);aspect-ratio:1;border-radius:50%;background:conic-gradient(var(--red) 0 25%,var(--blue) 0 50%,var(--yellow) 0 75%,var(--green) 0);box-shadow:0 0 0 1px rgba(255,255,255,.7)}
+.card.back{--cc:#21162a;background:repeating-linear-gradient(135deg,#251a2f 0 6px,#1d1325 6px 12px)}
+.card.back .oval{background:var(--red);box-shadow:inset 0 0 0 calc(var(--w)*.03) rgba(0,0,0,.25)}
+.card.back .big{font-size:calc(var(--w)*.27);color:var(--gold);transform:rotate(-20deg);text-shadow:calc(var(--w)*.02) calc(var(--w)*.02) 0 #000}
+.card.ring{box-shadow:inset 0 0 0 calc(var(--w)*.055) var(--paper),0 0 0 4px var(--ring),0 6px 14px rgba(0,0,0,.35)}
+
+/* you */
+.me{border-radius:20px;background:rgba(10,6,14,.28);border:1px solid var(--line);padding:12px 14px 4px;transition:border-color .2s,box-shadow .2s}
+.me.turn{border-color:var(--gold);box-shadow:0 0 0 3px rgba(255,211,92,.14)}
+.me-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
+.me-id{display:flex;align-items:center;gap:10px;position:relative;min-width:0;flex-wrap:wrap}
+.me-av{--av:var(--blue)}
+.me-who{position:relative}
+.status{font-size:13px;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.07);color:var(--muted)}
+.status.go{background:var(--gold);color:#2b1b05;font-weight:700}
+.status.alert{background:var(--red);color:#fff;font-weight:700}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.hand{--w:clamp(54px,12vw,86px);display:flex;overflow-x:auto;overflow-y:hidden;padding:20px 6px 12px;scrollbar-width:thin}
+.hand>:first-child{margin-left:auto}
+.hand>:last-child{margin-right:auto}
+.cardbtn{all:unset;position:relative;display:block;flex:none;cursor:pointer;border-radius:calc(var(--w)*.11);transition:transform .15s ease,filter .15s}
+.cardbtn+.cardbtn{margin-left:var(--ov,8px)}
+.cardbtn:hover{z-index:3}
+.hand.mine .cardbtn.ok{transform:translateY(-10px)}
+.hand.mine .cardbtn.ok:hover{transform:translateY(-17px)}
+.hand.mine .cardbtn.no .card{filter:brightness(.52) saturate(.6)}
+.cardbtn.drawn .card,.cardbtn.fresh .card{box-shadow:inset 0 0 0 calc(var(--w)*.055) var(--paper),0 0 0 3px var(--gold),0 6px 14px rgba(0,0,0,.35)}
+.cardbtn.fresh:not(.drawn) .card{box-shadow:inset 0 0 0 calc(var(--w)*.055) var(--paper),0 0 0 3px rgba(255,255,255,.8),0 6px 14px rgba(0,0,0,.35)}
+.cardbtn.shake{animation:shake .3s}
+.cardbtn:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.emptyhand{margin:auto;color:var(--muted);padding:24px 0}
+
+/* overlays */
+.overlay{position:fixed;inset:0;z-index:50;display:grid;place-items:center;overflow-y:auto;background:rgba(16,10,20,.84);padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.panel{width:min(540px,100%);background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:0 30px 80px rgba(0,0,0,.55);display:flex;flex-direction:column;gap:16px;animation:pop .2s ease-out}
+.panel.narrow{width:min(400px,100%)}
+.stack{display:flex;flex-direction:column;gap:16px}
+.ptitle{font:900 20px/1.25 var(--f-body);margin:0;text-wrap:balance}
+.setup-hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px}
+.fan{--w:56px;display:flex;justify-content:center;height:92px;padding-top:6px}
+.fan .card{margin:0 -9px;transform-origin:50% 130%}
+.fan .card:nth-child(1){transform:rotate(-20deg)}
+.fan .card:nth-child(2){transform:rotate(-7deg) translateY(-5px)}
+.fan .card:nth-child(3){transform:rotate(7deg) translateY(-5px)}
+.fan .card:nth-child(4){transform:rotate(20deg)}
+.logo.big{font-size:54px;display:flex;align-items:center;gap:12px}
+.logo.big .stamp0{font-size:18px;padding:7px 11px}
+.lede{margin:0;color:var(--muted);max-width:30em;text-wrap:balance}
+.lede.left{text-wrap:pretty}
+.note{margin:0;color:var(--muted);font-size:13px}
+.field{display:flex;flex-direction:column;gap:8px}
+.flabel{font-size:12px;letter-spacing:.06em;color:var(--muted);display:flex;justify-content:space-between;gap:10px}
+.flabel b{color:var(--ink);font-weight:500;letter-spacing:0}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{min-width:42px;padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--ink);font:700 14px/1 var(--f-body);cursor:pointer;font-variant-numeric:tabular-nums;touch-action:manipulation}
+.seg button:hover:not(:disabled){background:rgba(255,255,255,.12)}
+.seg button:disabled{opacity:.3;cursor:not-allowed}
+.seg button[aria-pressed="true"]{background:var(--gold);color:#2b1b05;border-color:transparent}
+.modeseg{background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:14px;padding:4px;gap:4px}
+.modeseg button{flex:1;border:0;background:transparent;padding:11px 12px;font-size:15px}
+.toggles{display:flex;flex-wrap:wrap;gap:10px 20px}
+.tog{display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+.tog input{width:18px;height:18px;margin:0;accent-color:var(--gold)}
+.row-actions{display:flex;justify-content:flex-end;align-items:center;gap:10px;flex-wrap:wrap}
+.inp{width:100%;min-width:0;background:rgba(255,255,255,.06);border:1px solid var(--line);color:var(--ink);border-radius:12px;padding:11px 12px;font:600 16px/1.2 var(--f-body)}
+.inp::placeholder{color:var(--muted);opacity:.7}
+.inp:focus{outline:2px solid var(--gold);outline-offset:1px}
+.inp.code{width:8.5em;flex:none;text-transform:uppercase;letter-spacing:.3em;font-family:var(--f-display);font-weight:800;text-align:center}
+.joinrow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.or{color:var(--muted);font-size:12px;text-align:center}
+.lob-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.roomcode{font:900 italic 42px/1 var(--f-display);letter-spacing:.12em;color:var(--gold);text-shadow:2px 2px 0 #000;margin-top:6px}
+.roster{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.roster li{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid var(--line);min-width:0}
+.roster li.spec{opacity:.6}
+.roster li.empty{color:var(--muted);grid-column:1/-1;justify-content:center}
+.roster .av{width:26px;height:26px;font-size:12px}
+.roster .rname{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;flex:1}
+.rtag{font-size:10px;line-height:1;padding:3px 6px;border-radius:999px;background:rgba(255,255,255,.1);color:var(--muted);flex:none}
+.rtag.me{background:var(--gold);color:#2b1b05}
+.tablemap{position:relative;width:100%;max-width:440px;margin:2px auto 0;aspect-ratio:4/3}
+.tablemap .felt{position:absolute;left:24%;right:24%;top:26%;bottom:26%;border-radius:50%;background:radial-gradient(circle at 50% 40%,var(--felt-hi),var(--felt));border:1px solid var(--line);display:grid;place-items:center;text-align:center;color:var(--muted);font-size:12px;line-height:1.4}
+.tablemap .felt b{display:block;font:900 24px/1 var(--f-body);color:var(--gold)}
+.sb{position:absolute;translate:-50% -50%;width:clamp(62px,18vw,92px);min-height:50px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 4px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:700 12px/1.15 var(--f-body);text-align:center;appearance:none}
+.sb .av{width:24px;height:24px;font-size:11px}
+.sb .sn{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sb .st{font-size:10px;font-weight:500;color:var(--muted)}
+.sb .no{position:absolute;left:6px;top:4px;font:800 10px/1 var(--f-display);color:var(--muted)}
+.sb.empty{border-style:dashed;color:var(--muted);background:rgba(255,255,255,.03)}
+button.sb{cursor:pointer;touch-action:manipulation}
+button.sb.empty:hover{border-color:var(--gold);color:var(--gold)}
+.sb.me{border-color:var(--gold);background:#3a2e1c;box-shadow:0 0 0 2px rgba(255,211,92,.25)}
+.sb.me .sn{color:var(--gold)}
+.sb.ai .sn{color:var(--muted)}
+.sb.pend{border-color:var(--gold);color:var(--gold);animation:breathe .6s ease-in-out infinite alternate}
+.tablemap.many .sb{width:clamp(52px,15vw,82px);min-height:44px;padding:4px 3px;font-size:11px}
+.tablemap.many .sb .av{width:20px;height:20px;font-size:10px}
+@media (max-width:480px){.tablemap{aspect-ratio:1/1}}
+.rules{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:8px;color:var(--ink);max-width:62ch}
+.rules b{color:var(--gold)}
+.rules .hot0{color:var(--ink);background:var(--red);padding:0 5px;border-radius:5px}
+.cgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.cbtn{all:unset;box-sizing:border-box;cursor:pointer;border-radius:16px;background:var(--c);padding:16px 14px;color:#fff;display:flex;justify-content:space-between;align-items:flex-end;gap:8px;min-height:72px;box-shadow:inset 0 -4px 0 rgba(0,0,0,.25);transition:transform .1s}
+.cbtn:hover{transform:translateY(-2px)}
+.cbtn b{font:900 26px/1 var(--f-body);text-shadow:1px 1px 0 rgba(0,0,0,.3)}
+.cbtn span{font-size:12px;opacity:.92}
+.cbtn[data-color="y"]{color:#2b1b05}
+.cbtn[data-color="y"] b{text-shadow:none}
+.cbtn:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.re-gain{font:900 italic 44px/1 var(--f-display);color:var(--gold)}
+.re-sub{margin:0;color:var(--muted)}
+.tablewrap{overflow-x:auto}
+.re-table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.re-table th{font-size:12px;color:var(--muted);font-weight:500;text-align:right;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.re-table td{text-align:right;padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.re-table th:first-child,.re-table td:first-child{text-align:left}
+.re-table tr.win td{color:var(--gold);font-weight:800}
+.bar-meter{display:inline-block;vertical-align:middle;width:56px;height:6px;border-radius:3px;background:rgba(255,255,255,.1);margin-left:8px;overflow:hidden}
+.bar-meter i{display:block;height:100%;background:var(--gold)}
+
+/* slap result + toasts */
+.slapres{position:fixed;z-index:40;left:50%;top:50%;translate:-50% -50%;width:min(300px,calc(100% - 32px));background:var(--panel);border:2px solid var(--gold);border-radius:18px;padding:14px 16px;box-shadow:0 24px 60px rgba(0,0,0,.6);animation:pop .16s ease-out}
+.sr-head{font:900 22px/1 var(--f-body);color:var(--gold)}
+.slapres ol{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:3px;max-height:50vh;overflow:auto}
+.slapres li{display:flex;justify-content:space-between;gap:10px;padding:5px 8px;border-radius:8px;font-variant-numeric:tabular-nums}
+.slapres li.me{background:rgba(255,255,255,.08)}
+.slapres li.lose{background:var(--red);color:#fff;font-weight:800}
+.sr-foot{margin-top:10px;font-weight:700}
+.toasts{position:fixed;z-index:60;left:50%;top:calc(env(safe-area-inset-top,0px) + 12px);translate:-50% 0;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;width:min(420px,calc(100% - 32px))}
+.toast{background:var(--panel);border:1px solid var(--line);padding:9px 14px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.45);animation:pop .16s ease-out;text-align:center}
+.toast.bad{border-color:var(--red)}
+.toast.good{border-color:var(--gold)}
+
+@keyframes land{from{transform:translateY(-36px) scale(1.18) rotate(calc(var(--rot,0deg) - 18deg));opacity:.25}to{transform:rotate(var(--rot,0deg));opacity:1}}
+@keyframes ring{from{opacity:1;transform:scale(.92)}to{opacity:0;transform:scale(1.18)}}
+@keyframes breathe{from{opacity:.35}to{opacity:1}}
+@keyframes pop{from{scale:.85;opacity:0}to{scale:1;opacity:1}}
+@keyframes shake{0%,100%{translate:0}25%{translate:-5px}75%{translate:5px}}
+@keyframes hot{to{box-shadow:0 8px 0 #6d1418,0 0 0 12px rgba(255,211,92,.55),0 14px 30px rgba(0,0,0,.45)}}
+@keyframes urgent{to{box-shadow:0 0 0 6px rgba(224,64,62,.45);scale:1.06}}
+
+@media (max-width:640px){
+  .table{grid-template-columns:auto auto;grid-template-areas:"piles slap" "info info";justify-content:center;column-gap:24px;row-gap:14px}
+  .info{justify-self:stretch;max-width:none}
+  .seat{flex-basis:108px;padding:8px 9px;gap:7px}
+  .av{width:28px;height:28px;font-size:13px}
+  .logo{font-size:26px}
+  .roundinfo{width:100%;order:-1;text-align:right}
+  .roomcode{font-size:34px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition:none!important}
+}
+</style>
+
+<div class="app">
+  <header class="bar">
+    <div class="brand"><span class="logo">UNO</span><span class="stamp0">抢0</span></div>
+    <div class="bar-right">
+      <span class="roomchip" id="roomchip" hidden></span>
+      <span class="roundinfo" id="roundinfo"></span>
+      <button class="btn ghost small" id="btnRules" type="button">规则</button>
+      <button class="btn ghost small" id="btnSetup" type="button">设置 / 新游戏</button>
+    </div>
+  </header>
+
+  <section aria-label="对手">
+    <div class="opp-head"><span>同桌</span><span id="dirhint"></span></div>
+    <div class="seats" id="seats"></div>
+  </section>
+
+  <section class="table" aria-label="牌桌">
+    <div class="info">
+      <div class="colorchip" id="colorchip"><i style="--c:var(--muted)"></i>当前颜色 <b>—</b></div>
+      <ol class="log" id="log"></ol>
+    </div>
+    <div class="piles">
+      <div class="pilecol">
+        <button class="pile-draw" id="drawPile" type="button" aria-label="摸一张牌"></button>
+        <span class="pilelabel" id="deckCount">牌堆</span>
+      </div>
+      <div class="pilecol">
+        <div class="pile-discard" id="discard"></div>
+        <span class="pilelabel" id="discardBy">弃牌堆</span>
+      </div>
+    </div>
+    <div class="slapcell">
+      <button class="slap" id="slap" type="button" aria-label="拍（空格键）">拍<small>空格键</small></button>
+      <span class="slaphint">看到 0 就拍</span>
+    </div>
+  </section>
+
+  <section class="me" id="me" aria-label="你的手牌">
+    <div class="me-head">
+      <div class="me-id">
+        <div class="me-who"><span class="av me-av">你</span><span id="meExtra"></span></div>
+        <div><div class="seat-name">你</div><div class="seat-sub" id="meSub">— 张</div></div>
+        <span class="status" id="status">选好玩法就开局</span>
+      </div>
+      <div class="actions">
+        <button class="btn" id="btnDraw" type="button" disabled>摸牌<kbd>D</kbd></button>
+        <button class="btn" id="btnPass" type="button" hidden>不出</button>
+        <button class="btn uno" id="btnUno" type="button" disabled>UNO!<kbd>U</kbd></button>
+      </div>
+    </div>
+    <div class="hand" id="hand"></div>
+  </section>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="slapres" id="slapres" hidden></div>
+<div class="flylayer" id="flylayer" aria-hidden="true"></div>
+
+<div class="overlay" id="setup">
+  <div class="panel">
+    <div class="setup-hero">
+      <div class="fan" id="fan"></div>
+      <h1 class="logo big">UNO<span class="stamp0">抢0</span></h1>
+      <p class="lede">经典 108 张。谁出了 0，全桌抢着拍，最慢的那个罚摸牌。</p>
+    </div>
+    <div class="seg modeseg" id="segMode" role="group" aria-label="玩法"></div>
+
+    <div class="stack" id="localForm">
+      <div class="field"><div class="flabel"><span>人数</span><b id="nHint"></b></div><div class="seg" id="segN"></div></div>
+      <div class="field"><div class="flabel"><span>电脑水平</span><b id="diffHint"></b></div><div class="seg" id="segDiff"></div></div>
+      <div class="field"><div class="flabel"><span>抢0 最慢的罚摸</span></div><div class="seg" id="segPen"></div></div>
+      <div class="field"><div class="flabel"><span>胜负</span></div><div class="seg" id="segTarget"></div></div>
+      <div class="toggles">
+        <label class="tog"><input type="checkbox" id="optFalse"> 没有 0 乱拍，罚摸 1 张</label>
+        <label class="tog"><input type="checkbox" id="optSound"> 音效</label>
+      </div>
+      <div class="row-actions">
+        <button class="btn ghost" id="btnShowRules" type="button">看规则</button>
+        <button class="btn" id="btnResume" type="button" hidden>回到牌桌</button>
+        <button class="btn primary" id="btnStart" type="button">发牌开局</button>
+      </div>
+    </div>
+
+    <div class="stack" id="onlineForm" hidden>
+      <div class="field">
+        <label class="flabel" for="nick"><span>你的昵称</span><b>朋友们看到的名字</b></label>
+        <input class="inp" id="nick" maxlength="10" autocomplete="off" placeholder="比如：Zoya">
+      </div>
+      <button class="btn primary big" id="btnCreate" type="button">开一个房间</button>
+      <div class="or">或者，加入朋友的房间</div>
+      <div class="joinrow">
+        <input class="inp code" id="joinCode" maxlength="4" autocomplete="off" placeholder="房间号" aria-label="房间号">
+        <button class="btn" id="btnJoin" type="button">加入</button>
+      </div>
+      <p class="note" id="netNote">正在检查能不能联机…</p>
+      <div class="row-actions">
+        <label class="tog"><input type="checkbox" id="optSound2"> 音效</label>
+        <button class="btn ghost" id="btnShowRules2" type="button">看规则</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="lobby" hidden>
+  <div class="panel">
+    <div class="lob-head">
+      <div><div class="flabel"><span>房间号</span></div><div class="roomcode" id="lobCode">----</div></div>
+      <button class="btn small" id="btnCopyCode" type="button">复制房间号</button>
+    </div>
+    <p class="lede left">把房间号发给朋友：打开这个页面，选「和朋友联机」，输入房间号。</p>
+    <div class="field">
+      <div class="flabel"><span>选座位</span><b id="lobCount"></b></div>
+      <div class="tablemap" id="lobMap"></div>
+      <p class="note" id="lobSeatHint"></p>
+      <ul class="roster" id="lobRoster"></ul>
+    </div>
+    <div class="stack" id="lobHostOpts">
+      <div class="field"><div class="flabel"><span>座位数</span><b>空位由电脑补上</b></div><div class="seg" id="lobSeats"></div></div>
+      <div class="field"><div class="flabel"><span>电脑水平</span></div><div class="seg" id="lobDiff"></div></div>
+      <div class="field"><div class="flabel"><span>抢0 最慢的罚摸</span></div><div class="seg" id="lobPen"></div></div>
+      <div class="field"><div class="flabel"><span>胜负</span></div><div class="seg" id="lobTarget"></div></div>
+      <label class="tog"><input type="checkbox" id="lobFalse"> 没有 0 乱拍，罚摸 1 张</label>
+    </div>
+    <p class="note" id="lobWait"></p>
+    <div class="row-actions">
+      <button class="btn ghost" id="btnLobLeave" type="button">离开房间</button>
+      <button class="btn ghost" id="btnLobEnd" type="button" hidden>结束这场，回房间</button>
+      <button class="btn" id="btnLobClose" type="button" hidden>回到牌桌</button>
+      <button class="btn primary" id="btnLobStart" type="button" hidden>开始</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="rules" hidden>
+  <div class="panel">
+    <h2 class="ptitle">经典规则 + 抢0</h2>
+    <ul class="rules">
+      <li>每人 7 张。跟顶牌<b>同色</b>或<b>同数字/同符号</b>就能出；万能牌随时能出，出完指定颜色。</li>
+      <li><b>+4</b> 只有手里没有当前颜色的牌时才能出。</li>
+      <li>没牌可出（或不想出）就摸 1 张，摸到能出的可以马上出这一张。</li>
+      <li><b>跳过</b>：下家停一轮。<b>反转</b>：出牌方向掉头，两人局等于跳过。<b>+2 / +4</b>：下家摸牌并停一轮，不能叠加。</li>
+      <li><span class="hot0">抢0</span> 任何人出了 0，所有人抢着拍（点「拍」或按空格），最慢的人罚摸牌，张数在设置里选。没有 0 时乱拍罚 1 张（可关）。联机时每人的反应时间按自己屏幕上看到 0 的那一刻算。</li>
+      <li><b>UNO</b>：出到只剩 1 张时要喊。可以在剩 2 张时先按，也可以出完马上按。被别人抢先抓到，罚摸 2 张。有人忘喊时，他的座位上会出现「抓」，点它就让他罚 2 张。</li>
+      <li><b>联机</b>：房主开房间，朋友输入房间号加入。进房间后点圆桌上的空位选座，出牌按座位顺时针轮；没选座的人自动补空位，剩下的由电脑坐。有人掉线，电脑先代打，回来后接着自己出；轮到谁超过 45 秒没动，电脑替他出一手。</li>
+      <li><b>计分</b>：赢家拿走其他人手里的牌分。数字按面值，跳过/反转/+2 各 20，万能牌和 +4 各 50。先到 500 分赢整场。</li>
+    </ul>
+    <div class="row-actions"><button class="btn primary" id="btnRulesClose" type="button">知道了</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="colorpick" hidden>
+  <div class="panel narrow">
+    <h2 class="ptitle">选一个颜色</h2>
+    <div class="cgrid" id="cgrid"></div>
+    <div class="row-actions"><button class="btn ghost" type="button" data-cancel>先不出这张</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="roundend" hidden>
+  <div class="panel" id="rePanel"></div>
+</div>
+
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+const BAD_CH = new RegExp('[' + [[0,31],[127,159],[173,173],[8203,8207],[8232,8238],[8288,8303],[65279,65279],[57344,63743]].map(([a, b]) => String.fromCharCode(a) + '-' + String.fromCharCode(b)).join('') + ']', 'g');
+const cleanName = s => String(s || '').replace(BAD_CH, '').trim().slice(0, 10);
+
+const COLORS = ['r','y','g','b'];
+const CN = {r:'红', y:'黄', g:'绿', b:'蓝'};
+const CV = {r:'var(--red)', y:'var(--yellow)', g:'var(--green)', b:'var(--blue)'};
+const CORD = {r:0, y:1, g:2, b:3, w:4};
+const VORD = v => ({skip:10, rev:11, d2:12, wild:13, wd4:14})[v] ?? Number(v);
+const VNAME = v => ({skip:'跳过', rev:'反转', d2:'+2', wild:'万能牌', wd4:'+4'})[v] ?? v;
+const AI_NAMES = ['阿杰','小鹿','老周','糖糖','大熊','阿雅','毛豆','七七','Kiki'];
+const AV = ['#c2410c','#0f766e','#7c3aed','#be185d','#4d7c0f','#1d4ed8','#a16207','#0e7490','#9333ea','#b45309'];
+const DIFF = {
+  easy:   {label:'新手', hint:'拍得慢，常忘喊 UNO', slap:[650,1300], forget:.28, catchP:.5,  catchT:[800,1500], smart:0},
+  normal: {label:'普通', hint:'反应跟一般人差不多', slap:[430,950],  forget:.15, catchP:.8,  catchT:[600,1250], smart:1},
+  hard:   {label:'高手', hint:'手快，会卡你的下家', slap:[270,620],  forget:.06, catchP:.95, catchT:[420,950],  smart:2},
+};
+const ICON = {
+  skip:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" stroke-width="3.4"/><path d="M6.4 17.6 17.6 6.4" stroke="currentColor" stroke-width="3.4" stroke-linecap="round"/></svg>',
+  rev:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 9.5h12.5l-3.5-3.8M19.5 14.5H7l3.5 3.8" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+};
+const BACK = '<span class="card back"><span class="oval"></span><span class="big">UNO</span></span>';
+const CANCEL = Symbol('cancel');
+const STORE_KEY = 'uno-qiang0-settings', NICK_KEY = 'uno-qiang0-nick', UID_KEY = 'uno-qiang0-uid';
+const CODE_CHARS = 'abcdefghjkmnpqrstuvwxyz23456789';
+const PROTO = 2;
+const DIFF_OPTS = Object.entries(DIFF).map(([k, d]) => [k, d.label]);
+const PEN_OPTS = [[1,'1 张'],[2,'2 张'],[3,'3 张'],[4,'4 张']];
+const TARGET_OPTS = [[500,'先到 500 分'],[0,'单局定胜负']];
+const SEAT_OPTS = [2,3,4,5,6,7,8,9,10].map(v => [v, String(v)]);
+
+/* the 108 cards; an id always means the same card, so state can travel as ids */
+const CARDS = (() => {
+  let id = 0; const d = [];
+  for (const c of COLORS){
+    d.push({id:id++, c, v:'0'});
+    for (let k = 0; k < 2; k++){
+      for (let n = 1; n <= 9; n++) d.push({id:id++, c, v:String(n)});
+      for (const v of ['skip','rev','d2']) d.push({id:id++, c, v});
+    }
+  }
+  for (let k = 0; k < 4; k++){ d.push({id:id++, c:'w', v:'wild'}); d.push({id:id++, c:'w', v:'wd4'}); }
+  return d;
+})();
+
+let settings = {n:4, seats:4, diff:'normal', slapPen:2, target:500, falseSlap:true, sound:true, mode:'local'};
+let S = null;            // local/host: the real game; client: a mirror decoded from the host
+let mode = 'local';      // 'local' | 'host' | 'client'
+let mySeat = 0;          // -1 = watching
+let net = null;
+let token = 0, paused = false, turnSeq = 0, slapSeq = 0, feedSeq = 0, sayN = 0;
+let roomAvail;           // undefined while checking
+let roomP = null, userP = null;
+// view-side trackers
+let lastTopId = null, sayFirst = {}, freshUntil = {}, prevMyIds = null, prevRoundKey = null, prevSnd = null;
+let flyingTopId = null, playFlash = null, myPlayRect = null, prevCounts = null, prevCountsKey = null;
+let seenFeed = -1, slapResShown = null, reShownKey = null, lockN = null, lockT = 0;
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function wait(ms){
+  const t = token;
+  await sleep(ms);
+  while (paused && t === token) await sleep(150);
+  if (t !== token) throw CANCEL;
+}
+const rand = (a, b) => a + Math.random() * (b - a);
+const pick = a => a[Math.floor(Math.random() * a.length)];
+function shuffle(a){ for (let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function run(fn){ Promise.resolve().then(fn).catch(e => { if (e !== CANCEL) console.error(e); }); }
+
+function lsGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
+function lsSet(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
+function loadSettings(){ const raw = lsGet(STORE_KEY); if (raw){ try { settings = {...settings, ...JSON.parse(raw)}; } catch(e){} } }
+function saveSettings(){ lsSet(STORE_KEY, JSON.stringify(settings)); }
+function localUid(){ let u = lsGet(UID_KEY); if (!u){ u = 'l' + Math.random().toString(36).slice(2, 12); lsSet(UID_KEY, u); } return u; }
+const useCap = name => (window.claude && typeof window.claude.use === 'function') ? window.claude.use(name).catch(() => null) : Promise.resolve(null);
+const getRoom = () => roomP || (roomP = useCap('room'));
+const getUser = () => userP || (userP = useCap('user'));
+
+/* ---------- sound ---------- */
+let actx = null, noiseBuf = null;
+function audioInit(){
+  try {
+    if (!actx){
+      actx = new (window.AudioContext || window.webkitAudioContext)();
+      const len = Math.floor(actx.sampleRate * .3);
+      noiseBuf = actx.createBuffer(1, len, actx.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    }
+    if (actx.state === 'suspended') actx.resume();
+  } catch(e){ actx = null; }
+}
+function noise(dur, freq, gain){
+  const s = actx.createBufferSource(); s.buffer = noiseBuf;
+  const f = actx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = freq;
+  const g = actx.createGain(); const t = actx.currentTime;
+  g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+  s.connect(f).connect(g).connect(actx.destination); s.start(t); s.stop(t + dur);
+}
+function tone(freq, dur, type, gain, when){
+  const o = actx.createOscillator(); const g = actx.createGain(); const t = actx.currentTime + (when || 0);
+  o.type = type || 'sine'; o.frequency.setValueAtTime(freq, t);
+  g.gain.setValueAtTime(gain || .1, t); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+  o.connect(g).connect(actx.destination); o.start(t); o.stop(t + dur);
+}
+function sfx(k){
+  if (!settings.sound || !actx) return;
+  try {
+    if (k === 'play') noise(.05, 2600, .22);
+    else if (k === 'slap') noise(.16, 900, .9);
+    else if (k === 'slapAI') noise(.1, 700, .35);
+    else if (k === 'zero') tone(1250, .09, 'sine', .1);
+    else if (k === 'uno'){ tone(660, .12, 'triangle', .14); tone(990, .16, 'triangle', .14, .1); }
+    else if (k === 'pen') tone(170, .22, 'square', .05);
+    else if (k === 'win') [523, 659, 784, 1047].forEach((f, j) => tone(f, .26, 'triangle', .12, j * .11));
+  } catch(e){}
+}
+
+/* ---------- cards ---------- */
+const buildDeck = () => shuffle(CARDS.map(c => ({id:c.id, c:c.c, v:c.v})));
+const isNum = v => /^\d$/.test(v);
+const cardPts = c => isNum(c.v) ? Number(c.v) : (c.c === 'w' ? 50 : 20);
+function cardLabel(c){
+  if (c.c === 'w') return c.chosen ? `${VNAME(c.v)}（指定${CN[c.chosen]}色）` : VNAME(c.v);
+  return `${CN[c.c]}${VNAME(c.v)}`;
+}
+function cardHTML(c, extra, style){
+  let big, corner;
+  if (c.v === 'skip' || c.v === 'rev'){ big = ICON[c.v]; corner = ICON[c.v]; }
+  else if (c.v === 'wild'){ big = ''; corner = '<i class="wdot"></i>'; }
+  else if (c.v === 'd2'){ big = '+2'; corner = '+2'; }
+  else if (c.v === 'wd4'){ big = '+4'; corner = '+4'; }
+  else { big = c.v; corner = c.v; }
+  const cls = c.c === 'w' ? 'c-w' : 'c-' + c.c;
+  const ul = (c.v === '6' || c.v === '9') ? ' ul' : '';
+  return `<span class="card ${cls}${ul} v-${c.v} ${extra || ''}"${style ? ` style="${style}"` : ''}><span class="oval"></span><span class="crn tl">${corner}</span><span class="big">${big}</span><span class="crn br">${corner}</span></span>`;
+}
+const sortHand = h => [...h].sort((a, b) => CORD[a.c] - CORD[b.c] || VORD(a.v) - VORD(b.v));
+const topCard = () => S.discard[S.discard.length - 1];
+function playable(card, hand){
+  if (card.v === 'wd4') return !hand.some(c => c.c === S.color);
+  if (card.v === 'wild') return true;
+  const top = topCard();
+  return card.c === S.color || (!!top && card.v === top.v);
+}
+function colorCounts(hand){
+  const n = {r:0, y:0, g:0, b:0};
+  for (const c of hand) if (c.c !== 'w') n[c.c]++;
+  return n;
+}
+
+/* ---------- state helpers ---------- */
+const online = () => mode !== 'local';
+const who = i => i === mySeat ? '你' : (S && S.players[i] ? S.players[i].name : '?');
+const fmtPlain = m => String(m).replace(/@(\d+)/g, (_, i) => who(+i));
+const fmt = m => esc(m).replace(/@(\d+)/g, (_, i) => esc(who(+i)));
+function nextIdx(steps, from){
+  const n = S.players.length; const f = from == null ? S.current : from;
+  return ((f + S.dir * (steps == null ? 1 : steps)) % n + n) % n;
+}
+const aiSeat = i => S.players[i].kind === 'ai' || !!S.players[i].bot;
+function log(m){ S.log.push(m); if (S.log.length > 4) S.log.shift(); }
+function feed(m, a, b){ S.feed.push({n: ++feedSeq, m, a: a == null ? -1 : a, b: b == null ? -1 : b}); if (S.feed.length > 4) S.feed.shift(); }
+function say(i, text){ S.say[i] = [text, ++sayN]; }
+function toast(msg, kind){
+  const box = $('#toasts'); const el = document.createElement('div');
+  el.className = 'toast ' + (kind || ''); el.textContent = msg; box.appendChild(el);
+  while (box.children.length > 3) box.firstChild.remove();
+  setTimeout(() => el.remove(), 2600);
+}
+const mkPlayer = (name, kind, uid, sid) => ({name, kind, uid: uid || '', sid: sid || '', hand:[], score:0, saidUno:false, bot:false});
+const cfgFromSettings = () => ({diff: settings.diff, pen: settings.slapPen, target: settings.target, falseSlap: !!settings.falseSlap});
+function reshuffle(){
+  if (S.discard.length <= 1) return;
+  const top = S.discard.pop();
+  S.deck = shuffle(S.discard.map(c => { delete c.chosen; delete c.rot; delete c.by; return c; }));
+  S.discard = [top];
+  log('牌堆摸完了，弃牌洗回去');
+}
+function drawCards(i, k){
+  const p = S.players[i]; const got = [];
+  for (let j = 0; j < k; j++){
+    if (!S.deck.length) reshuffle();
+    if (!S.deck.length) break;
+    const c = S.deck.pop(); p.hand.push(c); got.push(c);
+  }
+  if (got.length) p.saidUno = false;
+  return got;
+}
+const locked = () => mode === 'client' && lockN != null && S && S.sn === lockN && Date.now() - lockT < 3000;
+const humanCanAct = () => !!S && !!S.players && mySeat >= 0 && S.phase === 'play' && S.current === mySeat && S.awaiting === mySeat && !paused && !locked();
+const overlayOpen = () => ['#setup','#rules','#colorpick','#roundend','#lobby'].some(s => !$(s).hidden);
+
+/* ---------- game flow (runs on the local game or the host) ---------- */
+function newLocalMatch(){
+  mode = 'local'; mySeat = 0;
+  const n = settings.n;
+  const players = [mkPlayer('你', 'me')];
+  for (let i = 1; i < n; i++) players.push(mkPlayer(AI_NAMES[i - 1], 'ai'));
+  S = {v:2, players, round:1, starter:Math.floor(Math.random() * n), cfg:cfgFromSettings()};
+  resetView();
+  newRound();
+}
+function newRound(){
+  token++; paused = false; turnSeq++;
+  ['#setup','#rules','#colorpick','#roundend','#slapres','#lobby'].forEach(s => $(s).hidden = true);
+  S.deck = buildDeck(); S.discard = [];
+  for (const p of S.players){ p.hand = []; p.saidUno = false; }
+  for (let k = 0; k < 7; k++) for (const p of S.players) p.hand.push(S.deck.pop());
+  let top;
+  for (;;){
+    top = S.deck.pop();
+    if (/^[1-9]$/.test(top.v)) break;
+    S.deck.splice(Math.floor(Math.random() * S.deck.length), 0, top);
+  }
+  top.rot = rand(-8, 8);
+  S.discard.push(top);
+  Object.assign(S, {color:top.c, dir:1, current:S.starter, phase:'play', log:[], feed:[], say:{},
+    pendingDrawn:null, awaiting:-1, aiThinking:-1, slap:null, slapRes:null, catchable:-1, unoWindow:-1,
+    lastResult:null, turnAt:Date.now()});
+  log(`第 ${S.round} 局开始，@${S.starter}先出`);
+  render();
+  startTurn();
+}
+async function startTurn(){
+  const tid = ++turnSeq;
+  try {
+    if (!S || S.phase !== 'play') return;
+    S.awaiting = -1; S.aiThinking = -1; S.turnAt = Date.now();
+    const i = S.current;
+    if (!aiSeat(i)){ S.awaiting = i; render(); return; }
+    S.aiThinking = i; render();
+    await wait(rand(650, 1100));
+    if (tid !== turnSeq || !S || S.phase !== 'play' || S.current !== i) return;
+    S.aiThinking = -1;
+    await aiTurn(i);
+  } catch(e){ if (e !== CANCEL) console.error(e); }
+}
+async function aiTurn(i){
+  const p = S.players[i];
+  let opts;
+  if (S.pendingDrawn != null){
+    const c = p.hand.find(x => x.id === S.pendingDrawn); S.pendingDrawn = null;
+    if (c && playable(c, p.hand)) opts = [c];
+    else { log(`@${i}留着没出`); S.current = nextIdx(1); startTurn(); return; }
+  } else opts = p.hand.filter(c => playable(c, p.hand));
+  if (!opts.length){
+    const got = drawCards(i, 1);
+    log(`@${i}摸了一张`); render();
+    await wait(550);
+    if (got.length && playable(got[0], p.hand)) opts = [got[0]];
+    else { S.current = nextIdx(1); startTurn(); return; }
+  }
+  const card = aiChoose(i, opts);
+  const chosen = card.c === 'w' ? aiColor(p.hand) : null;
+  await playCard(i, card, chosen);
+}
+function aiChoose(i, opts){
+  const D = DIFF[S.cfg.diff]; const p = S.players[i];
+  if (D.smart === 0){ const soft = opts.filter(c => c.v !== 'wd4'); return pick(soft.length ? soft : opts); }
+  const danger = S.players[nextIdx(1)].hand.length <= 2;
+  const counts = colorCounts(p.hand);
+  let best = opts[0], bs = -Infinity;
+  for (const c of opts){
+    let s;
+    if (isNum(c.v)) s = 10 + Number(c.v) * .6;
+    else if (c.v === 'skip' || c.v === 'rev') s = danger ? 32 : 9;
+    else if (c.v === 'd2') s = danger ? 36 : 8;
+    else if (c.v === 'wild') s = danger ? 6 : 1;
+    else s = danger ? 40 : 0;
+    if (c.c !== 'w') s += counts[c.c] * (D.smart > 1 ? 1.6 : .8);
+    if (c.v === '0' && D.smart > 1) s += 5;
+    if (p.hand.length <= 2 && c.c === 'w') s += 8;
+    s += Math.random() * 2;
+    if (s > bs){ bs = s; best = c; }
+  }
+  return best;
+}
+function aiColor(hand){
+  const n = colorCounts(hand); let best = pick(COLORS), m = 0;
+  for (const c of COLORS) if (n[c] > m){ m = n[c]; best = c; }
+  return best;
+}
+
+async function playCard(pi, card, chosen){
+  const p = S.players[pi];
+  const idx = p.hand.findIndex(c => c.id === card.id); if (idx < 0) return;
+  p.hand.splice(idx, 1);
+  if (card.c === 'w') card.chosen = chosen;
+  card.rot = rand(-14, 14);
+  card.by = pi;
+  S.discard.push(card);
+  S.color = card.c === 'w' ? chosen : card.c;
+  log(`@${pi}出了 ${cardLabel(card)}`);
+  render();
+
+  if (card.v === '0') await slapPhase(pi);
+  if (p.hand.length === 1) await unoCheck(pi);
+
+  const n = S.players.length;
+  let steps = 1;
+  if (card.v === 'skip'){ steps = 2; log(`@${nextIdx(1)}被跳过`); }
+  else if (card.v === 'rev'){ S.dir *= -1; if (n === 2) steps = 2; log(n === 2 ? `反转：@${nextIdx(1)}停一轮` : '出牌方向反过来了'); }
+  else if (card.v === 'd2' || card.v === 'wd4'){
+    const victim = nextIdx(1); const k = card.v === 'd2' ? 2 : 4;
+    drawCards(victim, k);
+    log(`@${victim}摸 ${k} 张，停一轮`); steps = 2;
+  }
+  render();
+  if (p.hand.length === 0){ await wait(700); endRound(pi); return; }
+  await wait(250);
+  S.current = nextIdx(steps);
+  startTurn();
+}
+
+/* 抢0: everyone holding cards races to slap; the slowest draws */
+async function slapPhase(by){
+  const parts = S.players.map((_, i) => i).filter(i => S.players[i].hand.length > 0);
+  if (parts.length < 2) return;
+  const t = token, D = DIFF[S.cfg.diff];
+  let resolveFn; const done = new Promise(r => { resolveFn = r; });
+  const sl = S.slap = {id: ++slapSeq, start: performance.now(), times:{}, parts, resolve: resolveFn};
+  S.phase = 'slap';
+  render();
+  const timers = parts.filter(aiSeat).map(i => {
+    let rt = rand(D.slap[0], D.slap[1]);
+    if (i === by) rt *= .6;
+    return setTimeout(() => registerSlap(i, rt), rt);
+  });
+  timers.push(setTimeout(() => sl.resolve(), online() ? 3500 : 3200));
+  await done;
+  timers.forEach(clearTimeout);
+  if (t !== token) throw CANCEL;
+  const key = ms => ms < 0 ? 1e9 : ms;
+  const res = parts.map(i => [i, sl.times[i] == null ? -1 : sl.times[i]]).sort((a, b) => key(a[1]) - key(b[1]));
+  const lo = res[res.length - 1][0];
+  S.phase = 'slapResult'; S.slapEndedAt = performance.now();
+  drawCards(lo, S.cfg.pen);
+  S.slapRes = {id: sl.id, res, lo, pen: S.cfg.pen};
+  log(`抢0：@${lo}最慢，罚摸 ${S.cfg.pen} 张`);
+  render();
+  await wait(1900);
+  S.slap = null; S.slapRes = null; S.phase = 'play'; S.slapEndedAt = performance.now();
+  render();
+}
+function registerSlap(i, ms){
+  const sl = S && S.slap;
+  if (!sl || S.phase !== 'slap' || sl.times[i] != null || !sl.parts.includes(i)) return;
+  sl.times[i] = Math.max(1, Math.round(ms));
+  render();
+  const missing = sl.parts.filter(j => sl.times[j] == null);
+  const remoteMissing = missing.some(j => S.players[j].kind === 'remote' && !S.players[j].bot);
+  // a remote time can arrive late but still be fast, so only close early when nobody remote is outstanding
+  if (!missing.length || (missing.length === 1 && !remoteMissing)) setTimeout(() => sl.resolve(), 120);
+}
+
+async function unoCheck(pi){
+  const p = S.players[pi]; const D = DIFF[S.cfg.diff]; const t = token;
+  if (p.saidUno){ say(pi, 'UNO!'); render(); return; }
+  const ai = aiSeat(pi);
+  if (ai && Math.random() > D.forget){ p.saidUno = true; say(pi, 'UNO!'); render(); return; }
+  S.catchable = pi; S.unoWindow = ai ? -1 : pi; render();
+  const r = await new Promise(res => {
+    S.catchResolve = res; S.unoResolve = ai ? null : res;
+    const others = S.players.map((_, i) => i).filter(i => i !== pi && aiSeat(i));
+    const prob = ai ? .45 : D.catchP;
+    const tw = ai ? [900, 1500] : D.catchT;
+    if (others.length && Math.random() < prob) setTimeout(() => res({by: pick(others)}), rand(tw[0], tw[1]));
+    setTimeout(() => res(null), ai ? 1900 : (online() ? 2300 : 1900));
+  });
+  S.catchable = -1; S.unoWindow = -1; S.catchResolve = null; S.unoResolve = null;
+  if (t !== token) throw CANCEL;
+  if (r && r.by != null){
+    drawCards(pi, 2);
+    const m = `@${pi}没喊 UNO，被@${r.by}抓到，罚摸 2 张`;
+    feed(m, r.by, pi); log(m);
+  } else p.saidUno = true;
+  render();
+}
+
+function endRound(w){
+  S.phase = 'roundEnd';
+  const rows = S.players.map(p => ({left: p.hand.length, pts: p.hand.reduce((a, c) => a + cardPts(c), 0)}));
+  const gain = rows.reduce((a, r) => a + r.pts, 0);
+  S.players[w].score += gain;
+  const matchOver = S.cfg.target > 0 && S.players[w].score >= S.cfg.target;
+  S.lastResult = {w, gain, rows, matchOver, scores: S.players.map(p => p.score)};
+  log(`@${w}出完了`);
+  render();
+}
+function nextRound(){ S.round++; S.starter = (S.starter + 1) % S.players.length; newRound(); }
+
+/* ---------- intents: every human action goes through here (local seat or a remote one) ---------- */
+const canAct = seat => S.phase === 'play' && S.current === seat && S.awaiting === seat && !paused;
+function applyIntent(seat, a){
+  if (!S || !S.players || !a || typeof a.type !== 'string' || !(seat >= 0 && seat < S.players.length)) return;
+  if (a.type === 'play') intentPlay(seat, Number(a.card), a.color);
+  else if (a.type === 'draw') intentDraw(seat);
+  else if (a.type === 'pass') intentPass(seat);
+  else if (a.type === 'uno') intentUno(seat);
+  else if (a.type === 'catch') intentCatch(seat, Number(a.seat));
+  else if (a.type === 'slap') intentSlap(seat, a);
+}
+function intentPlay(seat, cardId, color){
+  if (!canAct(seat)) return;
+  const p = S.players[seat]; const card = p.hand.find(c => c.id === cardId);
+  if (!card || (S.pendingDrawn != null && card.id !== S.pendingDrawn) || !playable(card, p.hand)) return;
+  if (card.c === 'w' && !COLORS.includes(color)) return;
+  S.awaiting = -1; S.pendingDrawn = null;
+  run(() => playCard(seat, card, card.c === 'w' ? color : null));
+}
+function intentDraw(seat){
+  if (!canAct(seat) || S.pendingDrawn != null) return;
+  S.awaiting = -1;
+  run(async () => {
+    const got = drawCards(seat, 1);
+    if (!got.length){ log(`@${seat}没牌可摸，这轮跳过`); render(); await wait(500); S.current = nextIdx(1); startTurn(); return; }
+    log(`@${seat}摸了一张`);
+    if (playable(got[0], S.players[seat].hand)){ S.pendingDrawn = got[0].id; S.awaiting = seat; render(); return; }
+    render();
+    await wait(600);
+    S.current = nextIdx(1); startTurn();
+  });
+}
+function intentPass(seat){
+  if (!canAct(seat) || S.pendingDrawn == null) return;
+  S.pendingDrawn = null; S.awaiting = -1;
+  log(`@${seat}留着没出`);
+  S.current = nextIdx(1); startTurn();
+}
+function intentUno(seat){
+  const p = S.players[seat];
+  if (!p || S.phase === 'roundEnd') return;
+  if (S.unoWindow === seat && S.unoResolve){ p.saidUno = true; say(seat, 'UNO!'); S.unoResolve({called:true}); return; }
+  if (p.hand.length > 0 && p.hand.length <= 2 && !p.saidUno){ p.saidUno = true; say(seat, 'UNO!'); render(); }
+}
+function intentCatch(seat, target){
+  if (S.catchable === target && target !== seat && S.catchResolve) S.catchResolve({by: seat});
+}
+function intentSlap(seat, a){
+  if (S.phase === 'slap' && S.slap){
+    if (a.id != null && a.id !== S.slap.id) return;
+    const ms = (seat === mySeat && mode !== 'client') ? performance.now() - S.slap.start : Number(a.ms);
+    if (!isFinite(ms)) return;
+    registerSlap(seat, Math.min(5000, Math.max(60, ms)));
+    return;
+  }
+  if (a.id != null) return;                      // a late slap on a 0 that just finished
+  if (S.phase !== 'play' || paused) return;
+  if (S.slapEndedAt && performance.now() - S.slapEndedAt < 900) return;
+  if (!S.cfg.falseSlap || !S.players[seat].hand.length) return;
+  S.lastFalse = S.lastFalse || {}; const now = performance.now();
+  if (now - (S.lastFalse[seat] || 0) < 1000) return;
+  S.lastFalse[seat] = now;
+  drawCards(seat, 1);
+  const m = `@${seat}没有 0 也拍，罚摸 1 张`;
+  feed(m, -1, seat); log(m);
+  render();
+}
+
+/* ---------- this viewer's controls ---------- */
+function act(a){
+  if (mode === 'client') sendIntent(a);
+  else applyIntent(mySeat, a);
+}
+function pressSlap(){
+  if (!S || !S.players || mySeat < 0) return;
+  audioInit(); sfx('slap');
+  const pad = $('#slap'); pad.classList.add('hit'); setTimeout(() => pad.classList.remove('hit'), 110);
+  if (mode === 'client'){
+    if (S.phase === 'slap' && S.slap && net.slapSeen.id === S.slap.id){ sendIntent({type:'slap', id:S.slap.id, ms:Math.round(performance.now() - net.slapSeen.t)}); return; }
+    if (S.phase !== 'play' || performance.now() - net.slapEndSeen < 900) return;
+    sendIntent({type:'slap', id:null});
+    return;
+  }
+  applyIntent(mySeat, {type:'slap', id: S.slap ? S.slap.id : null});
+}
+function pressUno(){
+  if (!S || !S.players || mySeat < 0 || S.phase === 'roundEnd') return;
+  audioInit();
+  const me = S.players[mySeat];
+  if (S.unoWindow === mySeat || (me.hand.length > 0 && me.hand.length <= 2 && !me.saidUno)){ act({type:'uno'}); return; }
+  if (me.hand.length > 2) toast('剩 2 张、要出倒数第二张时再喊');
+}
+function pressDraw(){
+  if (!humanCanAct() || S.pendingDrawn != null) return;
+  audioInit(); act({type:'draw'});
+}
+function pressPass(){
+  if (!humanCanAct() || S.pendingDrawn == null) return;
+  act({type:'pass'});
+}
+function pickColor(hand){
+  return new Promise(res => {
+    const n = colorCounts(hand);
+    $('#cgrid').innerHTML = COLORS.map(c => `<button type="button" class="cbtn" data-color="${c}" style="--c:${CV[c]}"><b>${CN[c]}</b><span>手里 ${n[c]} 张</span></button>`).join('');
+    const el = $('#colorpick'); el.hidden = false;
+    el.onclick = e => {
+      const b = e.target.closest('[data-color]');
+      if (b){ el.hidden = true; el.onclick = null; res(b.dataset.color); return; }
+      if (e.target.closest('[data-cancel]')){ el.hidden = true; el.onclick = null; res(null); }
+    };
+    const first = el.querySelector('.cbtn'); if (first) first.focus();
+  });
+}
+function onHandClick(e){
+  const b = e.target.closest('.cardbtn'); if (!b || !S || !S.players || mySeat < 0) return;
+  audioInit();
+  const me = S.players[mySeat];
+  const card = me.hand.find(c => c.id === Number(b.dataset.id)); if (!card) return;
+  if (!humanCanAct()){
+    if (S.phase === 'play' && S.current !== mySeat) toast(`还没轮到你，现在是${who(S.current)}`);
+    return;
+  }
+  const shake = () => { b.classList.add('shake'); setTimeout(() => b.classList.remove('shake'), 320); };
+  if (S.pendingDrawn != null && card.id !== S.pendingDrawn){ shake(); toast('摸牌后只能出刚摸到的那张，或者选「不出」'); return; }
+  if (!playable(card, me.hand)){
+    shake();
+    if (card.v === 'wd4') toast(`手里还有${CN[S.color]}色的牌，不能出 +4`);
+    else toast(`要出${CN[S.color]}色，或者跟顶牌一样的「${VNAME(topCard().v)}」`);
+    return;
+  }
+  myPlayRect = {id: card.id, rect: b.getBoundingClientRect()};
+  if (card.c === 'w'){
+    pickColor(me.hand).then(color => { if (color && humanCanAct()) act({type:'play', card:card.id, color}); });
+  } else act({type:'play', card:card.id});
+}
+
+/* ---------- render (same for every viewer, relative to mySeat) ---------- */
+function render(){
+  if (!S || !S.players) return;
+  const n = S.players.length, now = Date.now();
+  const me = mySeat >= 0 ? S.players[mySeat] : null;
+  const live = S.phase === 'play' || S.phase === 'slap' || S.phase === 'slapResult';
+  const topNow = S.discard[S.discard.length - 1] || null;
+  let flyPlan = null;
+  if (topNow && lastTopId !== null && topNow.id !== lastTopId && topNow.by != null && topNow.by >= 0){
+    playFlash = {seat: topNow.by, until: now + 1700, card: topNow};
+    setTimeout(render, 1750);
+    if (!reduceMotion()){ flyPlan = {card: topNow, by: topNow.by}; flyingTopId = topNow.id; }
+  }
+  $('#roundinfo').textContent = `第 ${S.round} 局 · ${S.cfg.target ? '先到 ' + S.cfg.target + ' 分' : '单局定胜负'}`;
+
+  for (const [k, v] of Object.entries(S.say || {})){
+    const key = k + ':' + v[1];
+    if (!sayFirst[key]){ sayFirst[key] = now; setTimeout(render, 1550); if (v[0] === 'UNO!') sfx('uno'); }
+  }
+  const sayText = i => { const v = S.say && S.say[i]; return v && now - sayFirst[i + ':' + v[1]] < 1500 ? v[0] : ''; };
+
+  const nxt = nextIdx(1);
+  const order = [];
+  if (me) for (let k = 1; k < n; k++) order.push((mySeat + k) % n);
+  else for (let i = 0; i < n; i++) order.push(i);
+  let h = '';
+  for (const i of order){
+    const p = S.players[i];
+    const st = S.slap && S.slap.times[i] != null ? S.slap.times[i] : null;
+    const sy = sayText(i);
+    const just = !!playFlash && playFlash.seat === i && now < playFlash.until;
+    const tags = (p.hand.length === 1 && p.saidUno ? '<span class="tag">UNO</span>' : '')
+      + (online() && p.kind === 'ai' ? '<span class="tag2">电脑</span>' : '')
+      + (p.bot ? '<span class="tag2">代打</span>' : '');
+    h += `<div class="seat${S.current === i && live ? ' turn' : ''}${just ? ' just' : ''}" data-seat="${i}"${just ? ` style="--jc:${flashColor(playFlash.card)}"` : ''}>
+      <span class="av" style="--av:${AV[i % AV.length]}">${esc([...p.name][0] || '?')}</span>
+      <div class="seat-main"><div class="seat-name"><span class="nm">${esc(p.name)}</span>${tags}</div>
+      <div class="seat-sub"><b class="cnt">${p.hand.length}</b>张 · ${p.score} 分</div></div>
+      ${just ? `<span class="mini">${cardHTML(playFlash.card)}</span>` : ''}
+      ${i === nxt && S.phase === 'play' ? '<span class="nexttag">下一个</span>' : ''}
+      ${st != null ? `<span class="stamp">拍 ${(st / 1000).toFixed(2)}s</span>` : ''}
+      ${sy ? `<span class="say">${esc(sy)}</span>` : ''}
+      ${S.catchable === i && me && i !== mySeat ? `<button class="catch" type="button" data-catch="${i}">抓！没喊UNO</button>` : ''}
+    </div>`;
+  }
+  $('#seats').innerHTML = h;
+  $('#dirhint').textContent = me ? `方向 ${S.dir === 1 ? '→' : '←'} · 你的下家：${who(nextIdx(1, mySeat))}` : `方向 ${S.dir === 1 ? '→' : '←'}`;
+
+  const col = COLORS.includes(S.color) ? S.color : 'r';
+  $('#colorchip').innerHTML = `<i style="--c:${CV[col]}"></i>当前颜色 <b>${CN[col]}</b>`;
+  $('#log').innerHTML = (S.log || []).slice(-3).map(l => `<li>${fmt(l)}</li>`).join('');
+
+  const act_ = humanCanAct();
+  const canDraw = act_ && S.pendingDrawn == null;
+  const dp = $('#drawPile');
+  dp.innerHTML = BACK + BACK + BACK;
+  dp.classList.toggle('can', canDraw);
+  $('#deckCount').textContent = `牌堆 ${S.deck.length} 张`;
+
+  const top3 = S.discard.slice(-3);
+  $('#discard').innerHTML = top3.map((c, k) => {
+    const isTop = k === top3.length - 1;
+    let extra = !isTop ? '' : c.id === flyingTopId ? 'incoming' : c.id !== lastTopId ? 'land' : '';
+    let style = `--rot:${(c.rot || 0).toFixed(1)}deg`;
+    if (isTop && c.c === 'w' && COLORS.includes(c.chosen)){ extra += ' ring'; style += `;--ring:${CV[c.chosen]}`; }
+    return cardHTML(c, extra, style);
+  }).join('');
+  const topId = top3.length ? top3[top3.length - 1].id : null;
+  lastTopId = topId;
+  const tb = top3.length ? top3[top3.length - 1].by : undefined;
+  $('#discardBy').innerHTML = tb != null && tb >= 0 && S.players[tb] ? `<i class="dot" style="--av:${AV[tb % AV.length]}"></i>${esc(who(tb))}出的` : '弃牌堆';
+  $('#discard').classList.toggle('flash', S.phase === 'slap');
+  $('#slap').classList.toggle('hot', S.phase === 'slap');
+  $('#slap').disabled = !me;
+
+  const myTurn = me && S.current === mySeat && S.phase === 'play';
+  $('#me').classList.toggle('turn', !!myTurn);
+  let mx = '';
+  if (me){
+    $('#meSub').innerHTML = `<b class="cnt">${me.hand.length}</b>张 · ${me.score} 分`;
+    if (S.slap && S.slap.times[mySeat] != null) mx += `<span class="stamp">拍 ${(S.slap.times[mySeat] / 1000).toFixed(2)}s</span>`;
+    const sy = sayText(mySeat); if (sy) mx += `<span class="say">${esc(sy)}</span>`;
+  } else $('#meSub').textContent = '观战中';
+  $('#meExtra').innerHTML = mx;
+
+  let st = '', cls = '';
+  if (!me) st = live ? `观战中 · 等${who(S.current)}出牌` : '观战中';
+  else if (S.phase === 'slap'){ st = '出 0 了，快拍！'; cls = 'alert'; }
+  else if (S.unoWindow === mySeat){ st = '只剩 1 张，快喊 UNO！'; cls = 'alert'; }
+  else if (S.phase === 'roundEnd') st = '这一局结束了';
+  else if (S.phase === 'slapResult') st = '抢0 结算中';
+  else if (act_ && S.pendingDrawn != null){ st = '摸到能出的牌：点它出，或者不出'; cls = 'go'; }
+  else if (act_){ st = me.hand.some(c => playable(c, me.hand)) ? '轮到你了' : '没有能出的牌，摸一张'; cls = 'go'; }
+  else if (S.current === mySeat) st = locked() ? '发送中…' : '出牌中';
+  else { st = `等${who(S.current)}出牌`; if (nxt === mySeat && S.phase === 'play') st += '，下一个是你'; }
+  const se = $('#status'); se.textContent = st; se.className = 'status ' + cls;
+
+  $('#btnDraw').disabled = !canDraw;
+  $('#btnPass').hidden = !(act_ && S.pendingDrawn != null);
+  const said = !!me && me.saidUno && me.hand.length > 0 && me.hand.length <= 2;
+  const ub = $('#btnUno');
+  ub.disabled = !me || S.phase === 'roundEnd' || !(S.unoWindow === mySeat || (me.hand.length > 0 && me.hand.length <= 2 && !me.saidUno));
+  ub.classList.toggle('said', said && S.unoWindow !== mySeat);
+  ub.classList.toggle('urgent', !!me && S.unoWindow === mySeat);
+  ub.innerHTML = said && S.unoWindow !== mySeat ? '已喊 UNO' : 'UNO!<kbd>U</kbd>';
+
+  // which of my cards just arrived
+  let addedFresh = false;
+  if (me){
+    const ids = me.hand.map(c => c.id); const rk = S.round + ':' + n + ':' + mySeat;
+    if (prevMyIds && prevRoundKey === rk){
+      let grown = 0;
+      for (const id of ids) if (!prevMyIds.has(id)){ freshUntil[id] = now + 1600; addedFresh = true; grown++; }
+      if (grown >= 2) sfx('pen');
+    }
+    prevMyIds = new Set(ids); prevRoundKey = rk;
+  }
+  if (addedFresh) setTimeout(render, 1650);
+
+  // sounds that follow what everyone sees
+  const othersSlaps = S.slap ? Object.keys(S.slap.times).filter(k => +k !== mySeat).length : 0;
+  const snd = {top: topId, phase: S.phase, slaps: othersSlaps, round: S.round};
+  if (prevSnd){
+    if (snd.top !== prevSnd.top && snd.round === prevSnd.round) sfx('play');
+    if (snd.phase === 'slap' && prevSnd.phase !== 'slap') sfx('zero');
+    if (snd.slaps > prevSnd.slaps) sfx('slapAI');
+    if (snd.phase === 'roundEnd' && prevSnd.phase !== 'roundEnd') sfx('win');
+  }
+  prevSnd = snd;
+
+  // table-wide notices (catches, wrong slaps, people dropping out)
+  const fd = S.feed || [];
+  const maxN = fd.reduce((m, f) => Math.max(m, f.n), 0);
+  if (seenFeed < 0) seenFeed = maxN;
+  else for (const f of fd) if (f.n > seenFeed){
+    toast(fmtPlain(f.m), f.b === mySeat && mySeat >= 0 ? 'bad' : (f.a === mySeat && mySeat >= 0 ? 'good' : ''));
+    if (f.b === mySeat && mySeat >= 0) sfx('pen');
+  }
+  seenFeed = Math.max(seenFeed, maxN);
+
+  if (S.phase === 'slapResult' && S.slapRes){
+    if (slapResShown !== S.slapRes.id){ slapResShown = S.slapRes.id; showSlapResult(S.slapRes); if (S.slapRes.lo === mySeat) sfx('pen'); }
+  } else $('#slapres').hidden = true;
+
+  if (S.phase === 'roundEnd' && S.lastResult){
+    const key = S.round + ':' + S.lastResult.w + ':' + (S.lastResult.scores || []).join(',');
+    if (reShownKey !== key && $('#setup').hidden && $('#lobby').hidden){ reShownKey = key; showRoundEnd(S.lastResult); }
+  } else $('#roundend').hidden = true;
+
+  const hand = $('#hand');
+  hand.classList.toggle('mine', act_);
+  if (!me) hand.innerHTML = '<span class="emptyhand">你在观战，下一场开始时可以入座</span>';
+  else if (!me.hand.length) hand.innerHTML = '<span class="emptyhand">手牌出完了</span>';
+  else {
+    hand.innerHTML = sortHand(me.hand).map(c => {
+      let k = 'cardbtn';
+      if (act_){
+        const ok = S.pendingDrawn != null ? c.id === S.pendingDrawn : playable(c, me.hand);
+        k += ok ? ' ok' : ' no';
+        if (c.id === S.pendingDrawn) k += ' drawn';
+      }
+      if (freshUntil[c.id] && freshUntil[c.id] > now) k += ' fresh';
+      return `<button type="button" class="${k}" data-id="${c.id}" aria-label="${cardLabel(c)}">${cardHTML(c)}</button>`;
+    }).join('');
+    fitHand();
+  }
+  if (flyPlan) runPlayFly(flyPlan);
+  runDrawFlies();
+  if (mode === 'host') broadcast();
+}
+const reduceMotion = () => !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+const flashColor = c => c.c === 'w' ? (CV[c.chosen] || 'var(--gold)') : CV[c.c];
+/* a card image that travels from one box on screen to another, then disappears */
+function fly(html, from, to, o){
+  const w = o.w, h = w * 1.5;
+  const fx = from.left + from.width / 2 - w / 2, fy = from.top + from.height / 2 - h / 2;
+  const tx = to.left + to.width / 2 - w / 2, ty = to.top + to.height / 2 - h / 2;
+  const el = document.createElement('div');
+  el.className = 'flyer'; el.style.setProperty('--w', w + 'px'); el.innerHTML = html;
+  $('#flylayer').appendChild(el);
+  const a = el.animate([
+    {transform: `translate(${fx}px,${fy}px) scale(${o.s0}) rotate(${o.r0 || 0}deg)`},
+    {transform: `translate(${tx}px,${ty}px) scale(${o.s1}) rotate(${o.r1 || 0}deg)`},
+  ], {duration: o.dur || 420, delay: o.delay || 0, easing: 'cubic-bezier(.2,.75,.25,1)', fill: 'both'});
+  let over = false;
+  const end = () => { if (over) return; over = true; clearTimeout(t); el.remove(); if (o.onEnd) o.onEnd(); };
+  const t = setTimeout(end, (o.dur || 420) + (o.delay || 0) + 400);   // backstop when the page's animation clock is paused
+  a.onfinish = end; a.oncancel = end;
+}
+function runPlayFly(plan){
+  const c = plan.card;
+  const done = () => {
+    if (flyingTopId !== c.id) return;
+    flyingTopId = null;
+    const el = $('#discard .card.incoming'); if (el) el.classList.remove('incoming');
+  };
+  setTimeout(done, 1200);
+  const to = $('#discard').getBoundingClientRect();
+  let from = null, s0 = .45;
+  if (plan.by === mySeat){
+    if (myPlayRect && myPlayRect.id === c.id){ from = myPlayRect.rect; s0 = from.width / (to.width || 1); }
+    else { from = $('#hand').getBoundingClientRect(); s0 = .8; }
+    myPlayRect = null;
+  } else {
+    const seat = document.querySelector(`#seats [data-seat="${plan.by}"]`);
+    if (seat) from = seat.getBoundingClientRect();
+  }
+  if (!from || !to.width){ done(); return; }
+  fly(cardHTML(c), from, to, {w: to.width, s0, s1: 1, r0: (c.rot || 0) - 28, r1: c.rot || 0, dur: 460, onEnd: done});
+}
+function runDrawFlies(){
+  const counts = S.players.map(p => p.hand.length);
+  const key = S.round + ':' + counts.length;
+  const prev = prevCountsKey === key ? prevCounts : null;
+  prevCounts = counts; prevCountsKey = key;
+  if (!prev || reduceMotion()) return;
+  const from = $('#drawPile').getBoundingClientRect();
+  if (!from.width) return;
+  let budget = 8;
+  counts.forEach((c, i) => {
+    const d = c - (prev[i] || 0);
+    if (d <= 0) return;
+    let to = null;
+    if (i === mySeat) to = $('#hand').getBoundingClientRect();
+    else { const el = document.querySelector(`#seats [data-seat="${i}"]`); if (el) to = el.getBoundingClientRect(); }
+    if (!to) return;
+    for (let k = 0; k < Math.min(d, 4) && budget > 0; k++, budget--)
+      fly(BACK, from, to, {w: from.width, s0: 1, s1: i === mySeat ? .85 : .35, r1: rand(-12, 12), dur: 380, delay: k * 90});
+  });
+}
+function fitHand(){
+  const el = $('#hand'); const kids = el.querySelectorAll('.cardbtn');
+  if (!kids.length) return;
+  const w = kids[0].getBoundingClientRect().width; const k = kids.length;
+  const cs = getComputedStyle(el);
+  const W = el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  let step = k > 1 ? (W - w) / (k - 1) : w + 8;
+  step = Math.max(w * .42, Math.min(w + 8, step));
+  const ov = step >= w + 8 ? 8 : Math.floor((step - w) * 10) / 10 - .3;
+  el.style.setProperty('--ov', ov + 'px');
+}
+function showSlapResult(sr){
+  const rows = sr.res.map(([i, ms], k) => {
+    const time = ms >= 0 ? (ms / 1000).toFixed(2) + ' 秒' : '最后一个';
+    return `<li class="${i === sr.lo ? 'lose' : ''}${i === mySeat ? ' me' : ''}"><span>${k + 1}. ${esc(who(i))}</span><span>${time}</span></li>`;
+  }).join('');
+  const el = $('#slapres');
+  el.innerHTML = `<div class="sr-head">抢0！</div><ol>${rows}</ol><div class="sr-foot">${esc(who(sr.lo))}最慢，罚摸 ${sr.pen} 张</div>`;
+  el.hidden = false;
+}
+function showRoundEnd(r){
+  const w = r.w; const single = !S.cfg.target;
+  const title = `${who(w)}赢了第 ${S.round} 局`;
+  let sub;
+  if (single) sub = '单局定胜负。牌分是其他人手里剩下的牌。';
+  else if (r.matchOver) sub = `${who(w)}先到 ${S.cfg.target} 分，拿下整场。`;
+  else sub = `先到 ${S.cfg.target} 分的人赢整场。`;
+  const rows = S.players.map((p, i) => {
+    const meter = single ? '' : `<span class="bar-meter"><i style="width:${Math.min(100, (r.scores[i] || 0) / S.cfg.target * 100)}%"></i></span>`;
+    const row = r.rows[i] || {left:0, pts:0};
+    return `<tr class="${i === w ? 'win' : ''}"><td>${esc(who(i))}</td><td>${row.left}</td><td>${i === w ? '+' + r.gain : row.pts}</td><td>${r.scores[i] || 0}${meter}</td></tr>`;
+  }).join('');
+  const again = single || r.matchOver;
+  let actions;
+  if (mode === 'client') actions = `<span class="note">等房主开下一局</span><button class="btn ghost" type="button" data-act="leave">离开房间</button>`;
+  else if (mode === 'host') actions = `<button class="btn ghost" type="button" data-act="lobby">回到房间</button><button class="btn primary" type="button" data-act="${again ? 'again' : 'next'}">${again ? '再来一场' : '下一局'}</button>`;
+  else actions = `<button class="btn ghost" type="button" data-act="setup">改设置</button><button class="btn primary" type="button" data-act="${again ? 'again' : 'next'}">${again ? '再来一场' : '下一局'}</button>`;
+  $('#rePanel').innerHTML = `
+    <h2 class="ptitle">${esc(title)}</h2>
+    <div class="re-gain">+${r.gain} 分</div>
+    <p class="re-sub">${esc(sub)}</p>
+    <div class="tablewrap"><table class="re-table"><thead><tr><th>玩家</th><th>剩牌</th><th>牌分</th><th>总分</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="row-actions">${actions}</div>`;
+  $('#roundend').hidden = false;
+}
+function resetView(){
+  lastTopId = null; prevMyIds = null; prevRoundKey = null; prevSnd = null;
+  seenFeed = -1; slapResShown = null; reShownKey = null; lockN = null; freshUntil = {};
+  flyingTopId = null; playFlash = null; myPlayRect = null; prevCounts = null; prevCountsKey = null;
+}
+function resetBoard(){
+  $('#seats').innerHTML = ''; $('#log').innerHTML = ''; $('#discard').innerHTML = '';
+  $('#drawPile').innerHTML = BACK + BACK + BACK; $('#drawPile').classList.remove('can');
+  $('#deckCount').textContent = '牌堆'; $('#hand').innerHTML = ''; $('#meSub').textContent = '— 张';
+  $('#status').textContent = online() ? '等房主开局' : '选好玩法就开局'; $('#status').className = 'status';
+  $('#colorchip').innerHTML = '<i style="--c:var(--muted)"></i>当前颜色 <b>—</b>';
+  $('#dirhint').textContent = ''; $('#roundinfo').textContent = ''; $('#meExtra').innerHTML = '';
+  $('#btnDraw').disabled = true; $('#btnUno').disabled = true; $('#btnPass').hidden = true;
+  $('#me').classList.remove('turn');
+  resetView();
+}
+
+/* ---------- online: presence-only protocol ----------
+   host presence  = {t, role:'host', ph:'lobby'|'game', lob|st, n}   (whole table, so latecomers get it)
+   player presence = {t, role:'player', name, uid, sid, acts:[last 8 actions]}  */
+const encIds = ids => ids.map(id => id.toString(36).padStart(2, '0')).join('');
+function decIds(s){
+  const out = [];
+  for (let k = 0; k + 1 < String(s).length; k += 2){ const c = CARDS[parseInt(s.slice(k, k + 2), 36)]; if (c) out.push({id:c.id, c:c.c, v:c.v}); }
+  return out;
+}
+function encodeState(){
+  return {
+    p: S.players.map(p => [p.name, p.kind === 'ai' ? 'a' : 'h', p.uid || '', p.sid || '', p.score, encIds(p.hand.map(c => c.id)), p.saidUno ? 1 : 0, p.bot ? 1 : 0]),
+    d: S.deck.length,
+    x: S.discard.slice(-3).map(c => [c.id, Math.round(c.rot || 0), c.chosen || '', c.by == null ? -1 : c.by]),
+    c: S.color, dir: S.dir, cur: S.current, aw: S.awaiting, pd: S.pendingDrawn == null ? -1 : S.pendingDrawn,
+    ph: S.phase, rd: S.round,
+    cfg: {t: S.cfg.target, pen: S.cfg.pen, fs: S.cfg.falseSlap ? 1 : 0, df: S.cfg.diff},
+    sl: S.slap ? {id: S.slap.id, tm: S.slap.times, pa: S.slap.parts} : null,
+    sr: S.slapRes || null,
+    ca: S.catchable, uw: S.unoWindow,
+    lg: S.log.slice(-3), fd: S.feed.slice(-4), sy: S.say, lr: S.lastResult || null,
+  };
+}
+function decodeState(st){
+  const num = (v, d) => (typeof v === 'number' && isFinite(v)) ? v : d;
+  const players = (Array.isArray(st.p) ? st.p : []).slice(0, 10).map(a => ({
+    name: cleanName(a[0]) || '玩家', kind: a[1] === 'a' ? 'ai' : 'remote', uid: String(a[2] || ''), sid: String(a[3] || ''),
+    score: num(a[4], 0), hand: decIds(String(a[5] || '')), saidUno: !!a[6], bot: !!a[7]}));
+  const discard = (Array.isArray(st.x) ? st.x : []).map(a => { const c = CARDS[a[0]]; return c ? {id:c.id, c:c.c, v:c.v, rot:num(a[1], 0), chosen: COLORS.includes(a[2]) ? a[2] : undefined, by: num(a[3], -1) >= 0 ? a[3] : undefined} : null; }).filter(Boolean);
+  const cfg = st.cfg || {};
+  return {
+    players, deck: {length: num(st.d, 0)}, discard, color: COLORS.includes(st.c) ? st.c : 'r', dir: st.dir === -1 ? -1 : 1,
+    current: num(st.cur, 0), awaiting: num(st.aw, -1), pendingDrawn: num(st.pd, -1) >= 0 ? st.pd : null,
+    phase: String(st.ph || 'play'), round: num(st.rd, 1),
+    cfg: {target: num(cfg.t, 500), pen: num(cfg.pen, 2), falseSlap: !!cfg.fs, diff: DIFF[cfg.df] ? cfg.df : 'normal'},
+    slap: st.sl ? {id: st.sl.id, times: st.sl.tm || {}, parts: st.sl.pa || []} : null,
+    slapRes: st.sr && Array.isArray(st.sr.res) ? st.sr : null,
+    catchable: num(st.ca, -1), unoWindow: num(st.uw, -1),
+    log: Array.isArray(st.lg) ? st.lg.map(String) : [], feed: Array.isArray(st.fd) ? st.fd : [],
+    say: st.sy && typeof st.sy === 'object' ? st.sy : {}, lastResult: st.lr && Array.isArray(st.lr.rows) ? st.lr : null,
+  };
+}
+const clampSeats = () => Math.min(10, Math.max(2, settings.seats, net ? Math.min(10, net.roster.length + 1) : 2));
+const hostPid = () => net.uid + ':' + net.sid;
+const seatName = pid => pid === hostPid() ? net.nick : ((net.roster.find(r => r.pid === pid) || {}).name || '玩家');
+/* host only: keep net.seatMap (seat index -> pid of whoever chose it) in step with who is here and what they asked for */
+function resolveSeats(){
+  const N = clampSeats();
+  const map = net.seatMap = Array.from({length: N}, (_, i) => net.seatMap[i] || null);
+  const here = new Set([hostPid(), ...net.roster.map(r => r.pid)]);
+  map.forEach((pid, i) => { if (pid && !here.has(pid)) map[i] = null; });
+  for (const r of net.roster){                      // earlier arrivals win a seat two people ask for at once
+    const cur = map.indexOf(r.pid);
+    if (r.want === -1){ if (cur >= 0) map[cur] = null; }
+    else if (r.want >= 0 && r.want < N && r.want !== cur && !map[r.want]){ if (cur >= 0) map[cur] = null; map[r.want] = r.pid; }
+  }
+}
+function hostSit(i){
+  resolveSeats();
+  const map = net.seatMap, me = hostPid(), cur = map.indexOf(me);
+  if (i === cur) map[cur] = null;
+  else if (i >= 0 && i < map.length && !map[i]){ if (cur >= 0) map[cur] = null; map[i] = me; }
+  else return;
+  renderLobby(); broadcast();
+}
+function clientSit(i){
+  const map = (net.lob && Array.isArray(net.lob.map)) ? net.lob.map : [];
+  const cur = map.findIndex(a => a && String(a[0]).endsWith(':' + net.sid));
+  const want = i === cur ? -1 : i;
+  net.want = want; net.wantAt = Date.now();
+  net.ch.presence({want}).catch(() => {});
+  renderLobby();
+}
+function lobbyPayload(){
+  resolveSeats();
+  return {
+    seats: clampSeats(),
+    list: [[net.uid + ':' + net.sid, net.nick, 1], ...net.roster.slice(0, 15).map(r => [r.pid, r.name, 0])],
+    map: net.seatMap.map(pid => pid ? [pid, seatName(pid)] : 0),
+    cfg: {df: settings.diff, pen: settings.slapPen, t: settings.target, fs: settings.falseSlap ? 1 : 0},
+  };
+}
+function broadcast(){
+  if (mode !== 'host' || !net) return;
+  let patch = (net.inLobby || !S || !S.players) ? {ph:'lobby', lob: lobbyPayload(), st: null} : {ph:'game', st: encodeState(), lob: null};
+  let body = JSON.stringify(patch);
+  if (body === net.sent) return;
+  net.sent = body;
+  const bytes = s => new TextEncoder().encode(s).length;
+  if (patch.st && bytes(body) > 3600){ patch.st.fd = patch.st.fd.slice(-1); patch.st.lg = patch.st.lg.slice(-1); }
+  if (patch.st && bytes(JSON.stringify(patch)) > 3600){ patch.st.lg = []; patch.st.fd = []; }
+  net.ch.presence({t: net.code, role:'host', ver: PROTO, ...patch, n: ++net.stateN}).catch(e => console.warn('presence', e && (e.code || e.message)));
+}
+function sendIntent(a){
+  if (!net || !net.ch || mySeat < 0) return;
+  a.n = ++net.seq;
+  net.acts.push(a); if (net.acts.length > 8) net.acts.shift();
+  if (a.type === 'play' || a.type === 'draw' || a.type === 'pass'){ lockN = S.sn; lockT = Date.now(); render(); }
+  net.ch.presence({acts: net.acts}).catch(() => {});
+}
+function genCode(){ let s = ''; for (let i = 0; i < 4; i++) s += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]; return s; }
+
+async function enterRoom(asHost, codeIn){
+  const room = await getRoom();
+  if (!room){ toast('这里连不上联机：要在 claude.ai 登录后打开这个页面'); return; }
+  const nick = cleanName($('#nick').value) || '玩家' + Math.floor(Math.random() * 90 + 10);
+  lsSet(NICK_KEY, nick);
+  const code = asHost ? genCode() : codeIn;
+  let ch;
+  try { ch = await room.join('uno-' + code); } catch(e){ ch = room; }
+  let uid = null;
+  try { const u = await getUser(); uid = u ? await u.id() : null; } catch(e){}
+  token++; turnSeq++; paused = false; S = null;
+  net = {room, ch, named: ch !== room, code, uid: uid || localUid(), sid: Math.random().toString(36).slice(2, 10), nick,
+    seq:0, acts:[], lastN:{}, roster:[], firstSeen:{}, joinSeq:0, present:new Set(), stateN:0, sent:'',
+    hostPeer:null, hostPresent:false, hostSeenAt:0, lastHostPresence:null, lob:null, inLobby:true, online:1,
+    slapSeen:{id:null, t:0}, slapEndSeen:0, seatMap:[], want:null, wantAt:0, joinedAt:Date.now(), warned:false, unsub:null, timer:null};
+  mode = asHost ? 'host' : 'client';
+  mySeat = asHost ? 0 : -1;
+  ['#setup','#roundend','#slapres','#colorpick'].forEach(s => $(s).hidden = true);
+  resetBoard();
+  net.unsub = ch.onPeers(onRoomPeers, e => toast('联机断开了（' + (e && e.code) + '）', 'bad'));
+  const base = {t: code, name: nick, uid: net.uid};
+  if (asHost){ broadcast(); ch.presence({...base, role:'host', ver:PROTO}).catch(() => {}); net.timer = setInterval(hostTick, 1000); }
+  else { ch.presence({...base, role:'player', sid: net.sid, acts: []}).catch(() => {}); net.timer = setInterval(clientTick, 1000); }
+  updateRoomChip();
+  showLobby();
+}
+function leaveRoom(){
+  if (!net) return;
+  try { net.unsub && net.unsub(); } catch(e){}
+  clearInterval(net.timer);
+  if (net.named) net.ch.leave().catch(() => {});
+  else net.ch.presence({t:null, role:null, ph:null, st:null, lob:null, acts:null, name:null, uid:null, sid:null, n:null, ver:null}).catch(() => {});
+  net = null; mode = 'local'; mySeat = 0; S = null; token++; turnSeq++;
+  ['#lobby','#roundend','#slapres','#colorpick'].forEach(s => $(s).hidden = true);
+  resetBoard(); updateRoomChip(); openSetup();
+}
+function onRoomPeers(change){
+  if (!net) return;
+  if (!change.joined.length && !change.left.length && change.updated.every(p => p.sameTab)) return;
+  net.online = change.peers.filter(p => p.presence && p.presence.t === net.code).length;
+  if (mode === 'host') hostPeers(change.peers);
+  else clientPeers(change.peers);
+  updateRoomChip();
+}
+function hostPeers(peers){
+  const list = []; const seen = new Set();
+  for (const p of peers){
+    if (p.sameTab) continue;
+    const pr = p.presence || {};
+    if (pr.t !== net.code || pr.role !== 'player') continue;
+    const uid = String(p.by || pr.uid || p.peer).slice(0, 80);
+    const sid = String(pr.sid || p.peer).slice(0, 24);
+    const pid = uid + ':' + sid;
+    if (seen.has(pid)) continue; seen.add(pid);
+    if (!net.firstSeen[pid]) net.firstSeen[pid] = ++net.joinSeq;
+    list.push({pid, uid, sid, name: cleanName(pr.name) || '玩家', acts: Array.isArray(pr.acts) ? pr.acts : [], want: Number.isInteger(pr.want) ? pr.want : -1});
+  }
+  list.sort((a, b) => net.firstSeen[a.pid] - net.firstSeen[b.pid]);
+  net.roster = list;
+  if (S && S.players){
+    const pids = new Set(list.map(r => r.pid));
+    const seated = r => S.players.some(q => q.kind === 'remote' && q.uid === r.uid && q.sid === r.sid);
+    for (const pl of S.players){
+      if (pl.kind !== 'remote' || pids.has(pl.uid + ':' + pl.sid)) continue;
+      const back = list.find(r => r.uid === pl.uid && !seated(r));   // same person, reloaded page
+      if (back) pl.sid = back.sid;
+    }
+    net.present = new Set(S.players.filter(pl => pl.kind === 'remote' && pids.has(pl.uid + ':' + pl.sid)).map(pl => pl.uid + ':' + pl.sid));
+    for (const r of list){
+      const seat = S.players.findIndex(pl => pl.kind === 'remote' && pl.uid === r.uid && pl.sid === r.sid);
+      if (seat < 0) continue;
+      let last = net.lastN[r.pid] || 0;
+      for (const a of r.acts.slice(-8)){
+        if (!a || typeof a !== 'object' || typeof a.n !== 'number' || a.n <= last) continue;
+        last = a.n;
+        applyIntent(seat, a);
+      }
+      net.lastN[r.pid] = last;
+    }
+    render();
+  } else broadcast();
+  if (!$('#lobby').hidden) renderLobby();
+}
+function hostTick(){
+  if (!net || !S || !S.players || S.phase === 'roundEnd') return;
+  const now = Date.now(); let changed = false;
+  S.players.forEach((p, i) => {
+    if (p.kind !== 'remote') return;
+    if (net.present.has(p.uid + ':' + p.sid)){
+      p.goneAt = 0;
+      if (p.bot){ p.bot = false; feed(`@${i}回来了`); changed = true; if (S.aiThinking === i) startTurn(); }
+    } else if (!p.goneAt) p.goneAt = now;
+    else if (!p.bot && now - p.goneAt > 6000){
+      p.bot = true; feed(`@${i}掉线了，电脑先代打`); changed = true;
+      if (S.awaiting === i) startTurn();
+    }
+  });
+  if (S.phase === 'play' && S.awaiting >= 0 && now - S.turnAt > 45000){
+    const i = S.awaiting; S.awaiting = -1; turnSeq++;
+    feed(`@${i}太久没出牌，电脑代出一手`, -1, i); changed = true;
+    run(() => aiTurn(i));
+  }
+  if (changed) render();
+}
+function clientPeers(peers){
+  let host = null;
+  for (const p of peers){
+    const pr = p.presence || {};
+    if (pr.t === net.code && pr.role === 'host' && (!host || p.peer === net.hostPeer)) host = p;
+  }
+  if (!host){ net.hostPresent = false; if (!$('#lobby').hidden) renderLobby(); return; }
+  net.hostPeer = host.peer; net.hostPresent = true; net.hostSeenAt = Date.now(); net.warned = false;
+  const pr = host.presence;
+  if (pr === net.lastHostPresence) return;
+  net.lastHostPresence = pr;
+  if (pr.ph === 'lobby' && pr.lob){
+    net.lob = pr.lob;
+    if (!net.inLobby || S){ net.inLobby = true; S = null; mySeat = -1; ['#roundend','#slapres','#colorpick'].forEach(s => $(s).hidden = true); resetBoard(); }
+    showLobby();
+    return;
+  }
+  if (pr.ph === 'game' && pr.st){
+    let st; try { st = decodeState(pr.st); } catch(e){ return; }
+    if (!st.players.length) return;
+    st.sn = pr.n;
+    const prev = S;
+    S = st;
+    mySeat = S.players.findIndex(p => p.kind !== 'ai' && p.sid === net.sid);
+    if (S.slap && S.slap.id !== net.slapSeen.id) net.slapSeen = {id: S.slap.id, t: performance.now()};
+    if (prev && prev.players && (prev.phase === 'slap' || prev.phase === 'slapResult') && S.phase === 'play') net.slapEndSeen = performance.now();
+    if (net.inLobby){ net.inLobby = false; $('#lobby').hidden = true; resetView(); }
+    if (lockN != null && S.sn !== lockN) lockN = null;
+    render();
+  }
+}
+function clientTick(){
+  if (!net) return;
+  if (!net.hostPresent && Date.now() - Math.max(net.hostSeenAt, net.joinedAt) > 5000 && !net.warned){
+    net.warned = true;
+    toast(net.hostSeenAt ? '房主暂时不在线，等房主回来，或者离开房间' : '还没找到这个房间，确认房间号对不对');
+  }
+  if (lockN != null && Date.now() - lockT > 3000){ lockN = null; render(); }
+  if (net.want != null && net.lob){                 // a seat request the host has not granted: give up after 4 s
+    const map = Array.isArray(net.lob.map) ? net.lob.map : [];
+    const cur = map.findIndex(a => a && String(a[0]).endsWith(':' + net.sid));
+    if (cur === net.want || (net.want === -1 && cur < 0)) net.want = null;
+    else if (Date.now() - net.wantAt > 4000){ toast('这个位置被人先坐了，换一个吧'); net.want = null; net.ch.presence({want: cur}).catch(() => {}); }
+  }
+  updateRoomChip();
+  if (!$('#lobby').hidden) renderLobby();
+}
+function updateRoomChip(){
+  const chip = $('#roomchip');
+  $('#btnSetup').textContent = online() ? '房间' : '设置 / 新游戏';
+  if (!net){ chip.hidden = true; return; }
+  chip.hidden = false;
+  const away = mode === 'client' && !net.hostPresent && Date.now() - Math.max(net.hostSeenAt, net.joinedAt) > 3000;
+  chip.textContent = `房间 ${net.code.toUpperCase()} · ${away ? '房主不在线' : net.online + ' 人在线'}`;
+  chip.classList.toggle('warn', away);
+}
+
+/* ---------- lobby ---------- */
+function buildSeg(el, opts, cur, onPick, isDisabled){
+  el.innerHTML = opts.map(([v, l]) => `<button type="button" data-v="${v}" aria-pressed="${cur == v}"${isDisabled && isDisabled(v) ? ' disabled' : ''}>${l}</button>`).join('');
+  el.onclick = e => { const b = e.target.closest('button'); if (b && !b.disabled) onPick(b.dataset.v); };
+}
+function showLobby(){ $('#lobby').hidden = false; renderLobby(); }
+function renderLobby(){
+  if (!net) return;
+  const host = mode === 'host';
+  const inGame = !!(S && S.players) && !net.inLobby;
+  $('#lobCode').textContent = net.code.toUpperCase();
+  let list, seats;
+  if (host){
+    list = [{pid: net.uid + ':' + net.sid, name: net.nick, isHost: true}, ...net.roster.map(r => ({pid: r.pid, name: r.name}))];
+    seats = inGame ? S.players.length : clampSeats();
+  } else {
+    list = (net.lob && Array.isArray(net.lob.list) ? net.lob.list : []).map(a => ({pid: String(a[0]), name: cleanName(a[1]) || '玩家', isHost: !!a[2]}));
+    seats = inGame ? S.players.length : (net.lob ? Math.min(10, Math.max(2, +net.lob.seats || 2)) : 0);
+  }
+  const mine = r => r.pid.endsWith(':' + net.sid);
+  // the round table: seat i -> {pid, name, kind, isHost, isMe} or null
+  let map = [];
+  if (inGame) map = S.players.map((p, i) => ({pid: '', name: p.name, kind: p.kind === 'ai' ? 'ai' : 'person', isMe: i === mySeat}));
+  else if (host){ resolveSeats(); map = net.seatMap.map(pid => pid ? {pid, name: seatName(pid), kind: 'person', isHost: pid === hostPid()} : null); }
+  else if (net.lob){
+    const hostP = (list.find(r => r.isHost) || {}).pid;
+    map = (Array.isArray(net.lob.map) ? net.lob.map : []).slice(0, seats).map(a => a ? {pid: String(a[0]), name: cleanName(a[1]) || '玩家', kind: 'person', isHost: String(a[0]) === hostP} : null);
+    while (map.length < seats) map.push(null);
+  }
+  if (!inGame) map.forEach(e => { if (e) e.isMe = mine(e); });
+  const canPick = !inGame && (host || !!net.lob);
+  const myAt = map.findIndex(e => e && e.isMe);
+  const pendAt = !host && net.want != null && net.want >= 0 && net.want !== myAt ? net.want : -1;
+  let tbl = '';
+  if (map.length){
+    tbl = `<div class="felt"><div><b>↻</b>${inGame ? '这一场的座位' : '按座位顺时针出牌'}</div></div>`;
+    map.forEach((e, i) => {
+      const ang = -Math.PI / 2 + i * 2 * Math.PI / map.length;
+      const pos = `left:${(50 + 41 * Math.cos(ang)).toFixed(1)}%;top:${(50 + 41 * Math.sin(ang)).toFixed(1)}%`;
+      const no = `<span class="no">${i + 1}</span>`;
+      if (!e){
+        if (canPick && i === pendAt) tbl += `<div class="sb empty pend" style="${pos}">${no}入座中…</div>`;
+        else if (canPick) tbl += `<button type="button" class="sb empty" data-sit="${i}" style="${pos}">${no}坐这里</button>`;
+        else tbl += `<div class="sb empty" style="${pos}">${no}空位</div>`;
+        return;
+      }
+      const sub = e.isMe ? (canPick ? '点一下站起来' : '') : e.kind === 'ai' ? '电脑' : (e.isHost ? '房主' : '');
+      const inner = `${no}<span class="av" style="--av:${AV[i % AV.length]}">${esc([...e.name][0] || '?')}</span><span class="sn">${esc(e.isMe ? '你' : e.name)}</span>${sub ? `<span class="st">${sub}</span>` : ''}`;
+      const cls = `sb${e.isMe ? ' me' : ''}${e.kind === 'ai' ? ' ai' : ''}`;
+      tbl += e.isMe && canPick ? `<button type="button" class="${cls}" data-sit="${i}" style="${pos}">${inner}</button>` : `<div class="${cls}" style="${pos}">${inner}</div>`;
+    });
+  }
+  $('#lobMap').innerHTML = tbl;
+  $('#lobMap').classList.toggle('many', map.length >= 7);
+  // people without a chosen seat: they take the empty seats in arrival order when the game starts
+  const seatedPids = new Set(map.filter(e => e && e.pid).map(e => e.pid));
+  const free = map.filter(e => !e).length;
+  const unseated = inGame ? [] : list.filter(r => !seatedPids.has(r.pid));
+  const iWatch = !inGame && unseated.findIndex(mine) >= free;
+  const ro = $('#lobRoster');
+  if (!inGame && !host && !net.lob) ro.innerHTML = `<li class="empty">${net.hostPresent ? '正在进入房间…' : '还没找到房主…'}</li>`;
+  else ro.innerHTML = unseated.map((r, k) => `<li class="${k >= free ? 'spec' : ''}"><span class="av" style="--av:${AV[(list.indexOf(r)) % AV.length]}">${esc([...r.name][0] || '?')}</span><span class="rname">${esc(r.name)}</span>${r.isHost ? '<span class="rtag">房主</span>' : ''}${mine(r) ? '<span class="rtag me">你</span>' : ''}<span class="rtag">${k >= free ? '观战' : '还没选座'}</span></li>`).join('');
+  ro.hidden = !ro.innerHTML;
+  $('#lobSeatHint').textContent = inGame ? '座位在开局时定下，下一场开始前可以换。'
+    : canPick ? '点空位坐下，点自己的位置站起来。没选座的人开局时按进房顺序补空位，剩下的空位由电脑坐。' : '';
+  $('#lobCount').textContent = seats ? (inGame ? `${seats} 个座位` : `${list.length} 人 · ${seats} 个座位`) : '';
+  $('#lobHostOpts').hidden = !(host && !inGame);
+  if (host && !inGame){
+    const minSeats = Math.min(10, net.roster.length + 1);
+    buildSeg($('#lobSeats'), SEAT_OPTS, clampSeats(), v => { settings.seats = +v; saveSettings(); renderLobby(); broadcast(); }, v => +v < minSeats);
+    buildSeg($('#lobDiff'), DIFF_OPTS, settings.diff, v => { settings.diff = v; saveSettings(); renderLobby(); broadcast(); });
+    buildSeg($('#lobPen'), PEN_OPTS, settings.slapPen, v => { settings.slapPen = +v; saveSettings(); renderLobby(); broadcast(); });
+    buildSeg($('#lobTarget'), TARGET_OPTS, settings.target, v => { settings.target = +v; saveSettings(); renderLobby(); broadcast(); });
+    $('#lobFalse').checked = !!settings.falseSlap;
+  }
+  let wait = '';
+  if (inGame) wait = mySeat >= 0 ? '牌局进行中。' : '牌局进行中，你在观战。';
+  else if (host){
+    const ai = Math.max(0, seats - list.length);
+    wait = `开局后${ai ? ` ${ai} 个空位由电脑补上` : '座位刚好坐满'}${list.length > seats ? '，多出来的人观战' : ''}。`;
+  } else if (!net.lob) wait = '正在找房间…（确认房间号是对的）';
+  else {
+    const c = net.lob.cfg || {};
+    wait = `电脑水平 ${(DIFF[c.df] || DIFF.normal).label} · 抢0 罚摸 ${c.pen || 2} 张 · ${c.t ? '先到 ' + c.t + ' 分' : '单局定胜负'}。`
+      + (iWatch ? '座位满了，开局后你观战。' : '等房主开始。');
+  }
+  $('#lobWait').textContent = wait;
+  $('#btnLobStart').hidden = !(host && !inGame);
+  $('#btnLobClose').hidden = !inGame;
+  $('#btnLobEnd').hidden = !(host && inGame);
+}
+function startOnlineMatch(){
+  resolveSeats();
+  const N = clampSeats();
+  const me = {pid: hostPid(), name: net.nick, kind: 'me', uid: net.uid, sid: net.sid};
+  const people = [me, ...net.roster.map(r => ({pid: r.pid, name: r.name, kind: 'remote', uid: r.uid, sid: r.sid}))];
+  const slots = net.seatMap.slice(0, N).map(pid => people.find(p => p.pid === pid) || null);
+  while (slots.length < N) slots.push(null);
+  const waiting = people.filter(p => !slots.includes(p));        // no chosen seat: fill empty seats in arrival order
+  for (let i = 0; i < N && waiting.length; i++) if (!slots[i]) slots[i] = waiting.shift();
+  if (!slots.includes(me)) slots[N - 1] = me;                     // only with more than 10 people: the host always plays
+  const taken = new Set(slots.filter(Boolean).map(p => p.name));
+  const names = AI_NAMES.filter(x => !taken.has(x));
+  let k = 0;
+  const players = slots.map(p => p ? mkPlayer(p.name, p.kind, p.uid, p.sid) : mkPlayer(names[k++] || ('电脑' + k), 'ai'));
+  S = {v:2, players, round:1, starter: Math.floor(Math.random() * N), cfg: cfgFromSettings()};
+  net.inLobby = false; mode = 'host'; mySeat = slots.indexOf(me);
+  resetView();
+  newRound();
+}
+function endToLobby(){
+  token++; turnSeq++; S = null; net.inLobby = true;
+  ['#roundend','#slapres','#colorpick'].forEach(s => $(s).hidden = true);
+  resetBoard(); broadcast(); showLobby();
+}
+
+/* ---------- setup / overlays ---------- */
+function buildSetup(){
+  buildSeg($('#segMode'), [['local','和电脑玩'],['online','和朋友联机']], settings.mode, v => { settings.mode = v; saveSettings(); buildSetup(); });
+  $('#localForm').hidden = settings.mode !== 'local';
+  $('#onlineForm').hidden = settings.mode !== 'online';
+  buildSeg($('#segN'), SEAT_OPTS, settings.n, v => { settings.n = +v; saveSettings(); buildSetup(); });
+  buildSeg($('#segDiff'), DIFF_OPTS, settings.diff, v => { settings.diff = v; saveSettings(); buildSetup(); });
+  buildSeg($('#segPen'), PEN_OPTS, settings.slapPen, v => { settings.slapPen = +v; saveSettings(); buildSetup(); });
+  buildSeg($('#segTarget'), TARGET_OPTS, settings.target, v => { settings.target = +v; saveSettings(); buildSetup(); });
+  $('#nHint').textContent = `你 + ${settings.n - 1} 个电脑`;
+  $('#diffHint').textContent = DIFF[settings.diff].hint;
+  $('#optFalse').checked = !!settings.falseSlap;
+  $('#optSound').checked = !!settings.sound;
+  $('#optSound2').checked = !!settings.sound;
+  if (settings.mode === 'online' && !$('#nick').value){
+    getUser().then(u => u ? u.me() : null).then(m => { if (m && m.name && !$('#nick').value) $('#nick').value = cleanName(m.name); }).catch(() => {});
+  }
+  updateNetNote();
+}
+function updateNetNote(){
+  const note = $('#netNote');
+  const ok = roomAvail === true;
+  $('#btnCreate').disabled = !ok; $('#btnJoin').disabled = !ok;
+  if (roomAvail === undefined) note.textContent = '正在检查能不能联机…';
+  else if (!ok) note.textContent = '这里连不上联机。要在 claude.ai 登录后打开这个页面，朋友也一样。';
+  else note.textContent = '开房间后把 4 位房间号发给朋友。朋友要登录 claude.ai，并且能打开这个页面（从右上角分享给他们）。';
+}
+function openSetup(){
+  const mid = mode === 'local' && !!S && !!S.players && S.phase !== 'roundEnd';
+  paused = mid;
+  $('#btnResume').hidden = !mid;
+  $('#btnStart').textContent = mid ? '重新开一场' : '发牌开局';
+  $('#roundend').hidden = true;
+  buildSetup();
+  $('#setup').hidden = false;
+}
+function closeSetupResume(){
+  $('#setup').hidden = true; paused = false;
+  if (S && S.players){
+    S.cfg = cfgFromSettings();
+    if (settings.n !== S.players.length) toast('人数改动要开新的一场才生效');
+  }
+  render();
+}
+function openRules(){
+  if (mode === 'local' && S && S.players && S.phase !== 'roundEnd' && $('#setup').hidden) paused = true;
+  $('#rules').hidden = false;
+  $('#btnRulesClose').focus();
+}
+function closeRules(){
+  $('#rules').hidden = true;
+  if ($('#setup').hidden) paused = false;
+  render();
+}
+
+$('#fan').innerHTML = [{c:'r', v:'0'}, {c:'y', v:'7'}, {c:'w', v:'wd4'}, {c:'b', v:'rev'}].map(c => cardHTML(c)).join('');
+
+$('#btnStart').addEventListener('click', () => { audioInit(); newLocalMatch(); });
+$('#btnResume').addEventListener('click', closeSetupResume);
+$('#btnSetup').addEventListener('click', () => { if (online()) showLobby(); else openSetup(); });
+$('#btnRules').addEventListener('click', openRules);
+$('#btnShowRules').addEventListener('click', openRules);
+$('#btnShowRules2').addEventListener('click', openRules);
+$('#btnRulesClose').addEventListener('click', closeRules);
+$('#optFalse').addEventListener('change', e => { settings.falseSlap = e.target.checked; saveSettings(); });
+$('#optSound').addEventListener('change', e => { settings.sound = e.target.checked; saveSettings(); buildSetup(); });
+$('#optSound2').addEventListener('change', e => { settings.sound = e.target.checked; saveSettings(); buildSetup(); });
+$('#lobFalse').addEventListener('change', e => { settings.falseSlap = e.target.checked; saveSettings(); broadcast(); });
+$('#btnCreate').addEventListener('click', () => { audioInit(); enterRoom(true); });
+$('#btnJoin').addEventListener('click', () => {
+  const code = $('#joinCode').value.toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (code.length !== 4){ toast('房间号是 4 位'); $('#joinCode').focus(); return; }
+  audioInit(); enterRoom(false, code);
+});
+$('#joinCode').addEventListener('keydown', e => { if (e.key === 'Enter') $('#btnJoin').click(); });
+$('#btnCopyCode').addEventListener('click', () => {
+  if (!net) return;
+  const code = net.code.toUpperCase();
+  const done = () => toast('已复制房间号 ' + code, 'good');
+  const fallback = () => { const r = document.createRange(); r.selectNodeContents($('#lobCode')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('已选中房间号，按复制即可'); };
+  try { navigator.clipboard.writeText(code).then(done, fallback); } catch(e){ fallback(); }
+});
+$('#btnLobStart').addEventListener('click', () => { if (mode === 'host') { audioInit(); startOnlineMatch(); } });
+$('#btnLobClose').addEventListener('click', () => {
+  $('#lobby').hidden = true;
+  if (S && S.phase === 'roundEnd' && S.lastResult) showRoundEnd(S.lastResult);
+  render();
+});
+$('#btnLobEnd').addEventListener('click', () => { if (mode === 'host') endToLobby(); });
+$('#btnLobLeave').addEventListener('click', leaveRoom);
+$('#lobMap').addEventListener('click', e => {
+  const b = e.target.closest('[data-sit]'); if (!b || !net) return;
+  if (mode === 'host') hostSit(+b.dataset.sit); else clientSit(+b.dataset.sit);
+});
+$('#roundend').addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const a = b.dataset.act;
+  if (a === 'setup') openSetup();
+  else if (a === 'leave') leaveRoom();
+  else if (a === 'lobby') endToLobby();
+  else if (a === 'again') { if (mode === 'host') startOnlineMatch(); else newLocalMatch(); }
+  else nextRound();
+});
+$('#hand').addEventListener('click', onHandClick);
+$('#drawPile').addEventListener('click', pressDraw);
+$('#btnDraw').addEventListener('click', pressDraw);
+$('#btnPass').addEventListener('click', pressPass);
+$('#btnUno').addEventListener('click', pressUno);
+$('#seats').addEventListener('click', e => {
+  const b = e.target.closest('[data-catch]');
+  if (b && S && mySeat >= 0) act({type:'catch', seat: Number(b.dataset.catch)});
+});
+const slapBtn = $('#slap');
+slapBtn.addEventListener('pointerdown', e => { e.preventDefault(); pressSlap(); });
+slapBtn.addEventListener('click', e => { if (e.detail === 0) pressSlap(); });
+document.addEventListener('keydown', e => {
+  if (e.target.closest && e.target.closest('input,textarea,select')) return;
+  if (overlayOpen()) return;
+  if (e.code === 'Space'){
+    if (S && S.players && mySeat >= 0){ e.preventDefault(); if (!e.repeat) pressSlap(); }
+    return;
+  }
+  if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  if (k === 'u') pressUno();
+  else if (k === 'd') pressDraw();
+});
+document.addEventListener('keyup', e => { if (e.code === 'Space' && S && S.players && !overlayOpen()) e.preventDefault(); });
+window.addEventListener('resize', () => { if (S && S.players) fitHand(); });
+
+/* keep a running solo game across live updates of the page */
+window.claude?.hot?.snapshot?.(() => ({settings, S: mode === 'local' && S && S.players ? JSON.parse(JSON.stringify(S)) : null}));
+function start(data){
+  loadSettings();
+  if (data && data.settings) settings = {...settings, ...data.settings};
+  const nk = lsGet(NICK_KEY); if (nk) $('#nick').value = nk;
+  buildSetup();
+  getRoom().then(r => { roomAvail = !!r; updateNetNote(); });
+  if (data && data.S && data.S.v === 2 && data.S.players && data.S.cfg){
+    S = data.S; mode = 'local'; mySeat = 0; token++; paused = false;
+    $('#setup').hidden = true;
+    S.say = S.say || {}; S.feed = S.feed || []; S.log = S.log || [];
+    if (S.phase === 'roundEnd' && S.lastResult){ render(); return; }
+    Object.assign(S, {phase:'play', slap:null, slapRes:null, catchable:-1, unoWindow:-1, awaiting:-1, aiThinking:-1});
+    if (S.current !== 0) S.pendingDrawn = null;
+    render(); startTurn();
+  }
+}
+window.claude?.hot?.ready ? window.claude.hot.ready(start) : start(window.claude?.hot?.data ?? {});
+})();
+</script>
