@@ -267,6 +267,11 @@ button.sb.empty:hover{border-color:var(--gold);color:var(--gold)}
 .slapres li.me{background:rgba(255,255,255,.08)}
 .slapres li.lose{background:var(--red);color:#fff;font-weight:800}
 .sr-foot{margin-top:10px;font-weight:700}
+.chalbox{border-color:var(--red);width:min(400px,calc(100% - 32px));top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);translate:-50% 0;z-index:46}
+#chalres{z-index:46}
+.chalbox p,#chalres p{margin:8px 0 0}
+.chalbox .row-actions{margin-top:12px}
+.proof{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;--w:34px}
 .toasts{position:fixed;z-index:60;left:50%;top:calc(env(safe-area-inset-top,0px) + 12px);translate:-50% 0;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;width:min(420px,calc(100% - 32px))}
 .toast{background:var(--panel);border:1px solid var(--line);padding:9px 14px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.45);animation:pop .16s ease-out;text-align:center}
 .toast.bad{border-color:var(--red)}
@@ -352,6 +357,8 @@ button.sb.empty:hover{border-color:var(--gold);color:var(--gold)}
 <div class="toasts" id="toasts" aria-live="polite"></div>
 <div class="slapres" id="slapres" hidden></div>
 <div class="flylayer" id="flylayer" aria-hidden="true"></div>
+<div class="slapres" id="chalres" hidden></div>
+<div class="slapres chalbox" id="chalbox" hidden></div>
 
 <div class="overlay" id="setup">
   <div class="panel">
@@ -367,7 +374,7 @@ button.sb.empty:hover{border-color:var(--gold);color:var(--gold)}
       <div class="field"><div class="flabel"><span>电脑水平</span><b id="diffHint"></b></div><div class="seg" id="segDiff"></div></div>
       <div class="field"><div class="flabel"><span>抢0 最慢的罚摸</span></div><div class="seg" id="segPen"></div></div>
       <div class="field"><div class="flabel"><span>胜负</span></div><div class="seg" id="segTarget"></div></div>
-      <div class="field"><div class="flabel"><span>加牌规则</span><b id="stackHint"></b></div><div class="seg" id="segStack"></div></div>
+      <div class="field"><div class="flabel"><span>特殊玩法（三选一）</span><b id="ruleHint"></b></div><div class="seg" id="segRule"></div></div>
       <div class="toggles">
         <label class="tog"><input type="checkbox" id="optFalse"> 没有 0 乱拍，罚摸 1 张</label>
         <label class="tog"><input type="checkbox" id="optSound"> 音效</label>
@@ -417,7 +424,7 @@ button.sb.empty:hover{border-color:var(--gold);color:var(--gold)}
       <div class="field"><div class="flabel"><span>电脑水平</span></div><div class="seg" id="lobDiff"></div></div>
       <div class="field"><div class="flabel"><span>抢0 最慢的罚摸</span></div><div class="seg" id="lobPen"></div></div>
       <div class="field"><div class="flabel"><span>胜负</span></div><div class="seg" id="lobTarget"></div></div>
-      <div class="field"><div class="flabel"><span>加牌规则</span></div><div class="seg" id="lobStack"></div></div>
+      <div class="field"><div class="flabel"><span>特殊玩法（三选一）</span><b id="lobRuleHint"></b></div><div class="seg" id="lobRule"></div></div>
       <label class="tog"><input type="checkbox" id="lobFalse"> 没有 0 乱拍，罚摸 1 张</label>
     </div>
     <p class="note" id="lobWait"></p>
@@ -435,10 +442,11 @@ button.sb.empty:hover{border-color:var(--gold);color:var(--gold)}
     <h2 class="ptitle">经典规则 + 抢0</h2>
     <ul class="rules">
       <li>每人 7 张。跟顶牌<b>同色</b>或<b>同数字/同符号</b>就能出；万能牌随时能出，出完指定颜色。</li>
-      <li><b>+4</b> 只有手里没有当前颜色的牌时才能出。</li>
+      <li><b>+4</b> 只有手里没有当前颜色的牌时才能出（手里有同数字、同符号的其他颜色牌不影响）。</li>
       <li>没牌可出（或不想出）就摸 1 张，摸到能出的可以马上出这一张。</li>
       <li><b>跳过</b>：下家停一轮。<b>反转</b>：出牌方向掉头，两人局等于跳过。<b>+2 / +4</b>：下家摸牌并停一轮（经典玩法不能叠加）。</li>
-      <li><b>加牌叠加（可选玩法）</b>：在设置或房间里选「可叠加」。有人出了 +2，下家可以接着出任意颜色的 +2 或 +4，把累计张数传下去；一旦叠进 +4，后面只能接 +4。接不上（或不想接）的人摸走全部累计的牌，并停一轮。叠加时出 +4 不受「手里没有当前颜色」的限制。</li>
+      <li><b>加牌叠加（可选玩法）</b>：在「特殊玩法」里选「加牌可叠加」。有人出了 +2，下家可以接着出任意颜色的 +2 或 +4，把累计张数传下去；一旦叠进 +4，后面只能接 +4。接不上（或不想接）的人摸走全部累计的牌，并停一轮。叠加时出 +4 不受「手里没有当前颜色」的限制。</li>
+      <li><b>+4 可质疑（可选玩法，按 Mattel 官方规则）</b>：在「特殊玩法」里选「+4 可质疑」，和加牌叠加二选一。+4 随时都能出，但只有出牌前手里没有当前颜色的牌才算合规。被 +4 的下家（只有他）可以选择质疑：出牌的人把手牌亮给他看。违规的话，出牌的人罚摸 4 张，下家不用摸、接着正常出牌；合规的话，下家罚摸 6 张（4+2）并停一轮。不质疑就照常摸 4 张、停一轮。颜色照出牌人指定的算。</li>
       <li><span class="hot0">抢0</span> 任何人出了 0，所有人抢着拍（点「拍」或按空格），最慢的人罚摸牌，张数在设置里选。没有 0 时乱拍罚 1 张（可关）。联机时每人的反应时间按自己屏幕上看到 0 的那一刻算。</li>
       <li><b>UNO</b>：出到只剩 1 张时要喊。可以在剩 2 张时先按，也可以出完马上按。被别人抢先抓到，罚摸 2 张。有人忘喊时，他的座位上会出现「抓」，点它就让他罚 2 张。</li>
       <li><b>联机</b>：房主开房间，朋友输入房间号加入。进房间后点圆桌上的空位选座，出牌按座位顺时针轮；没选座的人自动补空位，剩下的由电脑坐。有人掉线，电脑先代打，回来后接着自己出；轮到谁超过 45 秒没动，电脑替他出一手。</li>
@@ -452,6 +460,7 @@ button.sb.empty:hover{border-color:var(--gold);color:var(--gold)}
   <div class="panel narrow">
     <h2 class="ptitle">选一个颜色</h2>
     <div class="cgrid" id="cgrid"></div>
+    <p class="note" id="cpNote" hidden></p>
     <div class="row-actions"><button class="btn ghost" type="button" data-cancel>先不出这张</button></div>
   </div>
 </div>
@@ -493,7 +502,8 @@ const PROTO = 2;
 const DIFF_OPTS = Object.entries(DIFF).map(([k, d]) => [k, d.label]);
 const PEN_OPTS = [[1,'1 张'],[2,'2 张'],[3,'3 张'],[4,'4 张']];
 const TARGET_OPTS = [[500,'先到 500 分'],[0,'单局定胜负']];
-const STACK_OPTS = [[0,'经典：不叠加'],[1,'可叠加']];
+const RULE_OPTS = [['classic','经典'],['stack','加牌可叠加'],['challenge','+4 可质疑']];
+const RULE_HINT = {classic:'+2/+4 直接让下家摸', stack:'+2 能接 +2/+4，叠了 +4 只能接 +4', challenge:'+4 随时能出，下家可以质疑'};
 const SEAT_OPTS = [2,3,4,5,6,7,8,9,10].map(v => [v, String(v)]);
 
 /* the 108 cards; an id always means the same card, so state can travel as ids */
@@ -510,7 +520,7 @@ const CARDS = (() => {
   return d;
 })();
 
-let settings = {n:4, seats:4, diff:'normal', slapPen:2, target:500, stack:false, falseSlap:true, sound:true, mode:'local'};
+let settings = {n:4, seats:4, diff:'normal', slapPen:2, target:500, rule:'classic', falseSlap:true, sound:true, mode:'local'};
 let S = null;            // local/host: the real game; client: a mirror decoded from the host
 let mode = 'local';      // 'local' | 'host' | 'client'
 let mySeat = 0;          // -1 = watching
@@ -537,7 +547,10 @@ function run(fn){ Promise.resolve().then(fn).catch(e => { if (e !== CANCEL) cons
 
 function lsGet(k){ try { return localStorage.getItem(k); } catch(e){ return null; } }
 function lsSet(k, v){ try { localStorage.setItem(k, v); } catch(e){} }
-function loadSettings(){ const raw = lsGet(STORE_KEY); if (raw){ try { settings = {...settings, ...JSON.parse(raw)}; } catch(e){} } }
+function loadSettings(){
+  const raw = lsGet(STORE_KEY); if (raw){ try { settings = {...settings, ...JSON.parse(raw)}; } catch(e){} }
+  if (!RULE_HINT[settings.rule]) settings.rule = settings.stack ? 'stack' : 'classic';   // older saved settings had a stack on/off switch
+}
 function saveSettings(){ lsSet(STORE_KEY, JSON.stringify(settings)); }
 function localUid(){ let u = lsGet(UID_KEY); if (!u){ u = 'l' + Math.random().toString(36).slice(2, 12); lsSet(UID_KEY, u); } return u; }
 const useCap = name => (window.claude && typeof window.claude.use === 'function') ? window.claude.use(name).catch(() => null) : Promise.resolve(null);
@@ -607,7 +620,7 @@ const sortHand = h => [...h].sort((a, b) => CORD[a.c] - CORD[b.c] || VORD(a.v) -
 const topCard = () => S.discard[S.discard.length - 1];
 function playable(card, hand){
   if (S.stack) return card.v === 'wd4' || (card.v === 'd2' && S.stack.t === 'd2');   // only another draw card answers a stack
-  if (card.v === 'wd4') return !hand.some(c => c.c === S.color);
+  if (card.v === 'wd4') return !!S.cfg.challenge || !hand.some(c => c.c === S.color);   // with challenges on, a +4 may be a bluff
   if (card.v === 'wild') return true;
   const top = topCard();
   return card.c === S.color || (!!top && card.v === top.v);
@@ -638,7 +651,7 @@ function toast(msg, kind){
   setTimeout(() => el.remove(), 2600);
 }
 const mkPlayer = (name, kind, uid, sid) => ({name, kind, uid: uid || '', sid: sid || '', hand:[], score:0, saidUno:false, bot:false});
-const cfgFromSettings = () => ({diff: settings.diff, pen: settings.slapPen, target: settings.target, falseSlap: !!settings.falseSlap, stack: !!settings.stack});
+const cfgFromSettings = () => ({diff: settings.diff, pen: settings.slapPen, target: settings.target, falseSlap: !!settings.falseSlap, stack: settings.rule === 'stack', challenge: settings.rule === 'challenge'});
 function reshuffle(){
   if (S.discard.length <= 1) return;
   const top = S.discard.pop();
@@ -686,7 +699,7 @@ function newRound(){
   S.discard.push(top);
   Object.assign(S, {color:top.c, dir:1, current:S.starter, phase:'play', log:[], feed:[], say:{},
     pendingDrawn:null, awaiting:-1, aiThinking:-1, slap:null, slapRes:null, catchable:-1, unoWindow:-1,
-    lastResult:null, stack:null, turnAt:Date.now()});
+    lastResult:null, stack:null, chal:null, chalRes:null, turnAt:Date.now()});
   log(`第 ${S.round} 局开始，@${S.starter}先出`);
   render();
   startTurn();
@@ -749,7 +762,7 @@ function aiChoose(i, opts){
     else if (c.v === 'skip' || c.v === 'rev') s = danger ? 32 : 9;
     else if (c.v === 'd2') s = danger ? 36 : 8;
     else if (c.v === 'wild') s = danger ? 6 : 1;
-    else s = danger ? 40 : 0;
+    else s = (danger ? 40 : 0) - (S.cfg.challenge && p.hand.some(x => x.c === S.color) ? (D.smart > 1 ? 30 : 15) : 0);   // bluffing a +4 risks a challenge
     if (c.c !== 'w') s += counts[c.c] * (D.smart > 1 ? 1.6 : .8);
     if (c.v === '0' && D.smart > 1) s += 5;
     if (p.hand.length <= 2 && c.c === 'w') s += 8;
@@ -767,6 +780,8 @@ function aiColor(hand){
 async function playCard(pi, card, chosen){
   const p = S.players[pi];
   const idx = p.hand.findIndex(c => c.id === card.id); if (idx < 0) return;
+  const prevColor = S.color;
+  const proof = card.v === 'wd4' ? p.hand.filter(c => c.id !== card.id && c.c === prevColor).map(c => c.id) : [];   // cards that make a +4 illegal
   p.hand.splice(idx, 1);
   if (card.c === 'w') card.chosen = chosen;
   card.rot = rand(-14, 14);
@@ -789,6 +804,8 @@ async function playCard(pi, card, chosen){
       S.stack = {n: (S.stack ? S.stack.n : 0) + k, t: (card.v === 'wd4' || (S.stack && S.stack.t === 'wd4')) ? 'wd4' : 'd2'};
       if (p.hand.length === 0){ const victim = nextIdx(1); drawCards(victim, S.stack.n); log(`@${victim}摸走累计的 ${S.stack.n} 张`); S.stack = null; }
       else log(`加牌累计 +${S.stack.n}，看@${nextIdx(1)}接不接`);
+    } else if (card.v === 'wd4' && S.cfg.challenge && p.hand.length > 0){
+      steps = await challengePhase(pi, nextIdx(1), proof, prevColor);
     } else {
       const victim = nextIdx(1);
       drawCards(victim, k);
@@ -867,6 +884,33 @@ async function unoCheck(pi){
   render();
 }
 
+/* +4 challenge: only the player hit may challenge; returns how many seats play moves on (2 = the challenged-against player sits out) */
+let chalSeq = 0;
+async function challengePhase(by, to, proof, color){
+  const t = token;
+  S.chal = {by, to, color};
+  render();
+  const yes = await new Promise(res => {
+    S.chalResolve = res;
+    if (aiSeat(to)){                                  // computers can't see the hand: the more cards the player holds, the likelier a bluff
+      const D = DIFF[S.cfg.diff], size = S.players[by].hand.length;
+      const p = D.smart === 0 ? .2 : Math.min(.6, .12 + size * .045) + (D.smart > 1 ? .05 : 0);
+      setTimeout(() => res(Math.random() < p), rand(900, 1700));
+    }
+    setTimeout(() => res(false), online() ? 25000 : 60000);   // no answer: take the 4
+  });
+  S.chal = null; S.chalResolve = null;
+  if (t !== token) throw CANCEL;
+  if (!yes){ drawCards(to, 4); log(`@${to}没质疑，摸 4 张，停一轮`); render(); return 2; }
+  const guilty = proof.length > 0;
+  if (guilty){ drawCards(by, 4); log(`@${to}质疑成功，@${by}罚摸 4 张`); }
+  else { drawCards(to, 6); log(`@${to}质疑失败，罚摸 6 张，停一轮`); }
+  S.chalRes = {id: ++chalSeq, by, to, ok: guilty ? 1 : 0, color, proof};
+  render();
+  await wait(2600);
+  S.chalRes = null;
+  return guilty ? 1 : 2;
+}
 function endRound(w){
   S.phase = 'roundEnd';
   const rows = S.players.map(p => ({left: p.hand.length, pts: p.hand.reduce((a, c) => a + cardPts(c), 0)}));
@@ -889,6 +933,7 @@ function applyIntent(seat, a){
   else if (a.type === 'uno') intentUno(seat);
   else if (a.type === 'catch') intentCatch(seat, Number(a.seat));
   else if (a.type === 'slap') intentSlap(seat, a);
+  else if (a.type === 'chal') intentChal(seat, !!a.yes);
 }
 function intentPlay(seat, cardId, color){
   if (!canAct(seat)) return;
@@ -933,6 +978,9 @@ function intentUno(seat){
   if (!p || S.phase === 'roundEnd') return;
   if (S.unoWindow === seat && S.unoResolve){ p.saidUno = true; say(seat, 'UNO!'); S.unoResolve({called:true}); return; }
   if (p.hand.length > 0 && p.hand.length <= 2 && !p.saidUno){ p.saidUno = true; say(seat, 'UNO!'); render(); }
+}
+function intentChal(seat, yes){
+  if (S.chal && S.chal.to === seat && S.chalResolve) S.chalResolve(yes);
 }
 function intentCatch(seat, target){
   if (S.catchable === target && target !== seat && S.catchResolve) S.catchResolve({by: seat});
@@ -990,9 +1038,10 @@ function pressPass(){
   if (!humanCanAct() || S.pendingDrawn == null) return;
   act({type:'pass'});
 }
-function pickColor(hand){
+function pickColor(hand, note){
   return new Promise(res => {
     const n = colorCounts(hand);
+    $('#cpNote').textContent = note || ''; $('#cpNote').hidden = !note;
     $('#cgrid').innerHTML = COLORS.map(c => `<button type="button" class="cbtn" data-color="${c}" style="--c:${CV[c]}"><b>${CN[c]}</b><span>手里 ${n[c]} 张</span></button>`).join('');
     const el = $('#colorpick'); el.hidden = false;
     el.onclick = e => {
@@ -1023,7 +1072,8 @@ function onHandClick(e){
   }
   myPlayRect = {id: card.id, rect: b.getBoundingClientRect()};
   if (card.c === 'w'){
-    pickColor(me.hand).then(color => { if (color && humanCanAct()) act({type:'play', card:card.id, color}); });
+    const bluff = card.v === 'wd4' && S.cfg.challenge && me.hand.some(c => c.c === S.color);
+    pickColor(me.hand, bluff ? `你手里有${CN[S.color]}色牌，这张 +4 算违规：下家质疑的话你罚摸 4 张。` : '').then(color => { if (color && humanCanAct()) act({type:'play', card:card.id, color}); });
   } else act({type:'play', card:card.id});
 }
 
@@ -1040,7 +1090,7 @@ function render(){
     setTimeout(render, 1750);
     if (!reduceMotion()){ flyPlan = {card: topNow, by: topNow.by}; flyingTopId = topNow.id; }
   }
-  $('#roundinfo').textContent = `第 ${S.round} 局 · ${S.cfg.target ? '先到 ' + S.cfg.target + ' 分' : '单局定胜负'}${S.cfg.stack ? ' · 加牌可叠加' : ''}`;
+  $('#roundinfo').textContent = `第 ${S.round} 局 · ${S.cfg.target ? '先到 ' + S.cfg.target + ' 分' : '单局定胜负'}${S.cfg.stack ? ' · 加牌可叠加' : S.cfg.challenge ? ' · +4 可质疑' : ''}`;
 
   for (const [k, v] of Object.entries(S.say || {})){
     const key = k + ':' + v[1];
@@ -1116,6 +1166,8 @@ function render(){
   if (!me) st = live ? `观战中 · 等${who(S.current)}出牌` : '观战中';
   else if (S.phase === 'slap'){ st = '出 0 了，快拍！'; cls = 'alert'; }
   else if (S.unoWindow === mySeat){ st = '只剩 1 张，快喊 UNO！'; cls = 'alert'; }
+  else if (S.chal && S.chal.to === mySeat){ st = '质疑这张 +4，还是摸 4 张？'; cls = 'alert'; }
+  else if (S.chal) st = `等${who(S.chal.to)}决定要不要质疑`;
   else if (S.phase === 'roundEnd') st = '这一局结束了';
   else if (S.phase === 'slapResult') st = '抢0 结算中';
   else if (act_ && S.stack){ st = `接一张${S.stack.t === 'wd4' ? ' +4' : ' +2 或 +4'}，或者摸 ${S.stack.n} 张`; cls = 'alert'; }
@@ -1173,6 +1225,36 @@ function render(){
   if (S.phase === 'slapResult' && S.slapRes){
     if (slapResShown !== S.slapRes.id){ slapResShown = S.slapRes.id; showSlapResult(S.slapRes); if (S.slapRes.lo === mySeat) sfx('pen'); }
   } else $('#slapres').hidden = true;
+
+  // +4 challenge: the question for whoever was hit, then the verdict for everyone
+  const cb = $('#chalbox');
+  if (S.chal && me && S.chal.to === mySeat){
+    const key = S.chal.by + ':' + S.chal.to + ':' + S.discard.length + ':' + S.round;
+    if (cb.dataset.key !== key){
+      cb.dataset.key = key;
+      const nm = esc(who(S.chal.by)), pc = CN[S.chal.color] || '', tc = S.discard[S.discard.length - 1];
+      cb.innerHTML = `<div class="sr-head">要质疑这张 +4 吗？</div>
+        <p>${nm}出了 +4${tc && tc.chosen ? `，指定${CN[tc.chosen]}色` : ''}。出牌前的颜色是 <b>${pc}</b> 色。</p>
+        <p class="note">质疑后${nm}要把手牌亮给你看：手里有${pc}色牌就算违规，${nm}罚摸 4 张，你不用摸、接着出牌；没有的话你罚摸 6 张并停一轮。</p>
+        <div class="row-actions"><button class="btn" type="button" data-chal="0">不质疑，摸 4 张</button><button class="btn primary" type="button" data-chal="1">质疑</button></div>`;
+    }
+    cb.hidden = cb.dataset.answered === key;
+  } else { cb.hidden = true; cb.dataset.key = ''; cb.dataset.answered = ''; }
+  const crEl = $('#chalres');
+  if (S.chalRes){
+    if (crEl.dataset.id !== String(S.chalRes.id)){
+      crEl.dataset.id = String(S.chalRes.id);
+      const q = S.chalRes, nb = esc(who(q.by)), nt = esc(who(q.to)), pc = CN[q.color] || '';
+      const cards = (q.proof || []).map(x => typeof x === 'number' ? CARDS[x] : x).filter(Boolean);
+      const sees = mySeat >= 0 && (mySeat === q.by || mySeat === q.to);   // the hand is shown to the challenger only
+      crEl.innerHTML = `<div class="sr-head">${q.ok ? '质疑成功！' : '质疑失败'}</div>
+        <p>${nb}出 +4 时手里${q.ok ? `有 ${cards.length} 张${pc}色牌，算违规` : `没有${pc}色牌，出得合规`}。</p>
+        ${q.ok && sees ? `<div class="proof">${cards.map(c => cardHTML(c)).join('')}</div>` : ''}
+        <div class="sr-foot">${q.ok ? `${nb}罚摸 4 张，${nt}不用摸` : `${nt}罚摸 6 张，停一轮`}</div>`;
+      if ((q.ok && mySeat === q.by) || (!q.ok && mySeat === q.to)) sfx('pen');
+    }
+    crEl.hidden = false;
+  } else { crEl.hidden = true; crEl.dataset.id = ''; }
 
   if (S.phase === 'roundEnd' && S.lastResult){
     const key = S.round + ':' + S.lastResult.w + ':' + (S.lastResult.scores || []).join(',');
@@ -1319,6 +1401,7 @@ function resetBoard(){
   $('#dirhint').textContent = ''; $('#roundinfo').textContent = ''; $('#meExtra').innerHTML = '';
   $('#btnDraw').disabled = true; $('#btnUno').disabled = true; $('#btnPass').hidden = true;
   $('#stackBadge').hidden = true; $('#btnDraw').innerHTML = '摸牌<kbd>D</kbd>';
+  $('#chalbox').hidden = true; $('#chalres').hidden = true;
   $('#me').classList.remove('turn');
   resetView();
 }
@@ -1339,7 +1422,9 @@ function encodeState(){
     x: S.discard.slice(-3).map(c => [c.id, Math.round(c.rot || 0), c.chosen || '', c.by == null ? -1 : c.by]),
     c: S.color, dir: S.dir, cur: S.current, aw: S.awaiting, pd: S.pendingDrawn == null ? -1 : S.pendingDrawn,
     ph: S.phase, rd: S.round, sk: S.stack ? [S.stack.n, S.stack.t === 'wd4' ? 1 : 0] : 0,
-    cfg: {t: S.cfg.target, pen: S.cfg.pen, fs: S.cfg.falseSlap ? 1 : 0, df: S.cfg.diff, sk: S.cfg.stack ? 1 : 0},
+    cq: S.chal ? [S.chal.by, S.chal.to, S.chal.color] : 0,
+    cr: S.chalRes ? [S.chalRes.id, S.chalRes.by, S.chalRes.to, S.chalRes.ok, S.chalRes.color, encIds(S.chalRes.proof || [])] : 0,
+    cfg: {t: S.cfg.target, pen: S.cfg.pen, fs: S.cfg.falseSlap ? 1 : 0, df: S.cfg.diff, sk: S.cfg.stack ? 1 : 0, cg: S.cfg.challenge ? 1 : 0},
     sl: S.slap ? {id: S.slap.id, tm: S.slap.times, pa: S.slap.parts} : null,
     sr: S.slapRes || null,
     ca: S.catchable, uw: S.unoWindow,
@@ -1358,7 +1443,9 @@ function decodeState(st){
     current: num(st.cur, 0), awaiting: num(st.aw, -1), pendingDrawn: num(st.pd, -1) >= 0 ? st.pd : null,
     phase: String(st.ph || 'play'), round: num(st.rd, 1),
     stack: Array.isArray(st.sk) ? {n: num(st.sk[0], 0), t: st.sk[1] ? 'wd4' : 'd2'} : null,
-    cfg: {target: num(cfg.t, 500), pen: num(cfg.pen, 2), falseSlap: !!cfg.fs, diff: DIFF[cfg.df] ? cfg.df : 'normal', stack: !!cfg.sk},
+    chal: Array.isArray(st.cq) ? {by: num(st.cq[0], -1), to: num(st.cq[1], -1), color: COLORS.includes(st.cq[2]) ? st.cq[2] : 'r'} : null,
+    chalRes: Array.isArray(st.cr) ? {id: st.cr[0], by: num(st.cr[1], -1), to: num(st.cr[2], -1), ok: st.cr[3] ? 1 : 0, color: COLORS.includes(st.cr[4]) ? st.cr[4] : 'r', proof: decIds(String(st.cr[5] || ''))} : null,
+    cfg: {target: num(cfg.t, 500), pen: num(cfg.pen, 2), falseSlap: !!cfg.fs, diff: DIFF[cfg.df] ? cfg.df : 'normal', stack: !!cfg.sk, challenge: !!cfg.cg},
     slap: st.sl ? {id: st.sl.id, times: st.sl.tm || {}, parts: st.sl.pa || []} : null,
     slapRes: st.sr && Array.isArray(st.sr.res) ? st.sr : null,
     catchable: num(st.ca, -1), unoWindow: num(st.uw, -1),
@@ -1403,7 +1490,7 @@ function lobbyPayload(){
     seats: clampSeats(),
     list: [[net.uid + ':' + net.sid, net.nick, 1], ...net.roster.slice(0, 15).map(r => [r.pid, r.name, 0])],
     map: net.seatMap.map(pid => pid ? [pid, seatName(pid)] : 0),
-    cfg: {df: settings.diff, pen: settings.slapPen, t: settings.target, fs: settings.falseSlap ? 1 : 0, sk: settings.stack ? 1 : 0},
+    cfg: {df: settings.diff, pen: settings.slapPen, t: settings.target, fs: settings.falseSlap ? 1 : 0, sk: settings.rule === 'stack' ? 1 : 0, cg: settings.rule === 'challenge' ? 1 : 0},
   };
 }
 function broadcast(){
@@ -1660,7 +1747,8 @@ function renderLobby(){
     buildSeg($('#lobDiff'), DIFF_OPTS, settings.diff, v => { settings.diff = v; saveSettings(); renderLobby(); broadcast(); });
     buildSeg($('#lobPen'), PEN_OPTS, settings.slapPen, v => { settings.slapPen = +v; saveSettings(); renderLobby(); broadcast(); });
     buildSeg($('#lobTarget'), TARGET_OPTS, settings.target, v => { settings.target = +v; saveSettings(); renderLobby(); broadcast(); });
-    buildSeg($('#lobStack'), STACK_OPTS, settings.stack ? 1 : 0, v => { settings.stack = +v === 1; saveSettings(); renderLobby(); broadcast(); });
+    buildSeg($('#lobRule'), RULE_OPTS, settings.rule, v => { settings.rule = v; saveSettings(); renderLobby(); broadcast(); });
+    $('#lobRuleHint').textContent = RULE_HINT[settings.rule] || '';
     $('#lobFalse').checked = !!settings.falseSlap;
   }
   let wait = '';
@@ -1671,7 +1759,7 @@ function renderLobby(){
   } else if (!net.lob) wait = '正在找房间…（确认房间号是对的）';
   else {
     const c = net.lob.cfg || {};
-    wait = `电脑水平 ${(DIFF[c.df] || DIFF.normal).label} · 抢0 罚摸 ${c.pen || 2} 张 · ${c.t ? '先到 ' + c.t + ' 分' : '单局定胜负'} · 加牌${c.sk ? '可叠加' : '不叠加'}。`
+    wait = `电脑水平 ${(DIFF[c.df] || DIFF.normal).label} · 抢0 罚摸 ${c.pen || 2} 张 · ${c.t ? '先到 ' + c.t + ' 分' : '单局定胜负'} · ${c.sk ? '加牌可叠加' : c.cg ? '+4 可质疑' : '经典规则'}。`
       + (iWatch ? '座位满了，开局后你观战。' : '等房主开始。');
   }
   $('#lobWait').textContent = wait;
@@ -1713,8 +1801,8 @@ function buildSetup(){
   buildSeg($('#segDiff'), DIFF_OPTS, settings.diff, v => { settings.diff = v; saveSettings(); buildSetup(); });
   buildSeg($('#segPen'), PEN_OPTS, settings.slapPen, v => { settings.slapPen = +v; saveSettings(); buildSetup(); });
   buildSeg($('#segTarget'), TARGET_OPTS, settings.target, v => { settings.target = +v; saveSettings(); buildSetup(); });
-  buildSeg($('#segStack'), STACK_OPTS, settings.stack ? 1 : 0, v => { settings.stack = +v === 1; saveSettings(); buildSetup(); });
-  $('#stackHint').textContent = settings.stack ? '+2 能接 +2/+4，叠了 +4 只能接 +4' : '+2/+4 直接让下家摸';
+  buildSeg($('#segRule'), RULE_OPTS, settings.rule, v => { settings.rule = v; saveSettings(); buildSetup(); });
+  $('#ruleHint').textContent = RULE_HINT[settings.rule] || '';
   $('#nHint').textContent = `你 + ${settings.n - 1} 个电脑`;
   $('#diffHint').textContent = DIFF[settings.diff].hint;
   $('#optFalse').checked = !!settings.falseSlap;
@@ -1809,6 +1897,12 @@ $('#roundend').addEventListener('click', e => {
   else if (a === 'again') { if (mode === 'host') startOnlineMatch(); else newLocalMatch(); }
   else nextRound();
 });
+$('#chalbox').addEventListener('click', e => {
+  const b = e.target.closest('[data-chal]'); if (!b || !S || !S.chal || S.chal.to !== mySeat) return;
+  audioInit();
+  const cb = $('#chalbox'); cb.dataset.answered = cb.dataset.key; cb.hidden = true;
+  act({type:'chal', yes: b.dataset.chal === '1'});
+});
 $('#hand').addEventListener('click', onHandClick);
 $('#drawPile').addEventListener('click', pressDraw);
 $('#btnDraw').addEventListener('click', pressDraw);
@@ -1849,7 +1943,7 @@ function start(data){
     $('#setup').hidden = true;
     S.say = S.say || {}; S.feed = S.feed || []; S.log = S.log || [];
     if (S.phase === 'roundEnd' && S.lastResult){ render(); return; }
-    Object.assign(S, {phase:'play', slap:null, slapRes:null, catchable:-1, unoWindow:-1, awaiting:-1, aiThinking:-1});
+    Object.assign(S, {phase:'play', slap:null, slapRes:null, chal:null, chalRes:null, catchable:-1, unoWindow:-1, awaiting:-1, aiThinking:-1});
     if (S.current !== 0) S.pendingDrawn = null;
     render(); startTurn();
   }
