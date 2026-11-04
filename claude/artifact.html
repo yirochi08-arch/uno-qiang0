@@ -68,6 +68,7 @@ kbd{font:600 10px/1 var(--f-display);padding:2px 4px;border-radius:4px;border:1p
 .btn.uno.urgent{animation:urgent .42s ease-in-out infinite alternate}
 
 /* opponents */
+.opp-round{display:none}
 .opp-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:12px;letter-spacing:.06em;margin-bottom:10px}
 .seats{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 8px}
 .seat{position:relative;flex:0 1 158px;min-width:0;display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:14px;background:rgba(255,255,255,.045);border:1px solid var(--line);transition:background .2s,border-color .2s,box-shadow .2s}
@@ -124,6 +125,7 @@ kbd{font:600 10px/1 var(--f-display);padding:2px 4px;border-radius:4px;border:1p
 .slap.hot{animation:hot .38s ease-in-out infinite alternate}
 .slap:focus-visible{outline:3px solid var(--gold);outline-offset:4px}
 .slaphint{font-size:11px;color:var(--muted);text-align:center;max-width:12em}
+.slap.slap2,.btn.catch2{display:none}
 
 /* cards */
 .card{--cc:var(--red);position:relative;display:block;flex:none;width:var(--w);aspect-ratio:2/3;border-radius:calc(var(--w)*.11);background:var(--cc);color:var(--cc);overflow:hidden;box-shadow:inset 0 0 0 calc(var(--w)*.055) var(--paper),0 2px 0 rgba(0,0,0,.25),0 6px 14px rgba(0,0,0,.35)}
@@ -294,6 +296,67 @@ button.sb.empty:hover{border-color:var(--gold);color:var(--gold)}
   .roundinfo{width:100%;order:-1;text-align:right}
   .roomcode{font-size:34px}
 }
+/* phone, game table only: look at the top half, tap in the bottom dock (hand, then 摸牌 / UNO / 抓 / a wide 拍 bar under the thumb) */
+@media (max-width:640px){
+  .app{gap:8px;padding-block:8px 10px;min-height:100dvh}
+  .bar{gap:6px;flex-wrap:nowrap}
+  .bar .logo{font-size:22px}
+  .bar .stamp0{font-size:11px;padding:4px 6px}
+  .bar-right{gap:4px;flex-wrap:nowrap;min-width:0}
+  .bar-right .btn.small{padding:6px 10px;font-size:12px}
+  .bar .roomchip{font-size:11px;padding:5px 8px;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .bar .roundinfo{display:none}
+  .opp-head{margin-bottom:8px;font-size:11px;letter-spacing:0;gap:4px 10px}
+  .opp-title{display:none}
+  .opp-round{display:inline}
+  .seats{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:6px}
+  .seat{flex-direction:column;justify-content:flex-start;gap:3px;padding:9px 3px 6px;text-align:center;border-radius:12px;min-width:0}
+  .seat .av{width:30px;height:30px;font-size:13px}
+  .seat-main{flex:none;width:100%}
+  .seat-name{justify-content:center;flex-wrap:wrap;gap:2px 3px;font-size:13px;line-height:1.25}
+  .seat-name .nm{max-width:100%}
+  .seat .tag,.seat .tag2{font-size:9px;padding:2px 3px}
+  .seat-sub{font-size:11px}
+  .seat .cnt{font-size:15px}
+  .seat .nexttag{left:50%;right:auto;translate:-50% 0;top:-9px;font-size:9px;padding:2px 6px;white-space:nowrap}
+  .seat .say{left:-4px;top:-14px}
+  .seat .mini{right:3px;top:5px;translate:none;--w:18px}
+  .seat .stamp{right:-3px;bottom:-8px;font-size:9px;padding:3px 4px}
+  .seat .catch{display:none}
+  .seats.many .seat{padding:8px 1px 5px;gap:2px}
+  .seats.many .seat .av{width:26px;height:26px;font-size:12px}
+  .seats.many .seat-name{font-size:10px}
+  .seats.many .seat .tag2{display:none}
+  .seats.many .seat-sub{font-size:0}
+  .seats.many .seat .cnt{font-size:13px;margin:0}
+  .table{flex:1;min-height:0;grid-template-columns:1fr;grid-template-areas:"piles" "info";justify-items:center;align-content:center;row-gap:12px;padding-block:6px;border-radius:50% / 40%;background:radial-gradient(ellipse at 50% 45%,rgba(255,255,255,.07),transparent 68%)}
+  .slapcell{display:none}
+  .piles{--w:clamp(56px,min(27vw,14vh),112px);gap:20px}
+  .pilecol{gap:6px}
+  .pilelabel{font-size:11px}
+  .info{flex-direction:row;align-items:center;justify-content:center;gap:8px;justify-self:stretch;max-width:none}
+  .colorchip{flex:none;align-self:center;font-size:12px;padding:4px 10px 4px 4px}
+  .colorchip i{width:18px;height:18px}
+  .log{flex:0 1 auto;min-width:0;min-height:0;font-size:12px}
+  .log li{display:none}
+  .log li:last-child{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .me{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-areas:"who sub" "who st" "hand hand" "act act";column-gap:10px;row-gap:2px;padding:10px;border-radius:18px}
+  .me-head,.me-id{display:contents}
+  .me-who{grid-area:who;align-self:center}
+  .me-who .av{width:34px;height:34px;font-size:14px}
+  .me-id > div:not(.me-who){grid-area:sub;min-width:0}
+  .me-id .seat-name{display:none}
+  .me .seat-sub{font-size:11px}
+  .me .status{grid-area:st;justify-self:start;max-width:100%;font-size:12px;padding:4px 10px;line-height:1.3}
+  .hand{grid-area:hand;--w:clamp(56px,min(18vw,10vh),84px);padding:16px 2px 8px}
+  .actions{grid-area:act;display:flex;flex-wrap:nowrap;gap:8px;margin-top:2px}
+  .actions .btn{height:52px;padding:0 14px;font-size:14px;border-radius:14px;justify-content:center;flex:none}
+  .actions kbd{display:none}
+  .btn.catch2{display:inline-flex;background:var(--red);color:#fff;border-color:transparent;font-weight:900;animation:urgent .42s ease-in-out infinite alternate}
+  .slap.slap2{display:flex;flex:1;min-width:72px;align-items:center;justify-content:center;gap:8px;width:auto;height:52px;aspect-ratio:auto;border-radius:14px;font-size:26px;box-shadow:0 4px 0 #6d1418,0 8px 18px rgba(0,0,0,.35)}
+  .slap.slap2 small{display:inline;margin:0;font-size:11px;opacity:.85}
+  .slap.slap2.hit{transform:translateY(3px);box-shadow:0 1px 0 #6d1418,0 4px 10px rgba(0,0,0,.35)}
+}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition:none!important}
 }
@@ -311,7 +374,7 @@ button.sb.empty:hover{border-color:var(--gold);color:var(--gold)}
   </header>
 
   <section aria-label="对手">
-    <div class="opp-head"><span>同桌</span><span id="dirhint"></span></div>
+    <div class="opp-head"><span class="opp-title">同桌</span><span class="opp-round" id="roundinfo2"></span><span id="dirhint"></span></div>
     <div class="seats" id="seats"></div>
   </section>
 
@@ -348,6 +411,8 @@ button.sb.empty:hover{border-color:var(--gold);color:var(--gold)}
         <button class="btn" id="btnDraw" type="button" disabled>摸牌<kbd>D</kbd></button>
         <button class="btn" id="btnPass" type="button" hidden>不出</button>
         <button class="btn uno" id="btnUno" type="button" disabled>UNO!<kbd>U</kbd></button>
+        <button class="btn catch2" id="btnCatch" type="button" hidden></button>
+        <button class="slap slap2" id="slap2" type="button" aria-label="拍">拍<small>看到 0 就拍</small></button>
       </div>
     </div>
     <div class="hand" id="hand"></div>
@@ -1014,7 +1079,7 @@ function act(a){
 function pressSlap(){
   if (!S || !S.players || mySeat < 0) return;
   audioInit(); sfx('slap');
-  const pad = $('#slap'); pad.classList.add('hit'); setTimeout(() => pad.classList.remove('hit'), 110);
+  document.querySelectorAll('.slap').forEach(pad => { pad.classList.add('hit'); setTimeout(() => pad.classList.remove('hit'), 110); });
   if (mode === 'client'){
     if (S.phase === 'slap' && S.slap && net.slapSeen.id === S.slap.id){ sendIntent({type:'slap', id:S.slap.id, ms:Math.round(performance.now() - net.slapSeen.t)}); return; }
     if (S.phase !== 'play' || performance.now() - net.slapEndSeen < 900) return;
@@ -1091,6 +1156,7 @@ function render(){
     if (!reduceMotion()){ flyPlan = {card: topNow, by: topNow.by}; flyingTopId = topNow.id; }
   }
   $('#roundinfo').textContent = `第 ${S.round} 局 · ${S.cfg.target ? '先到 ' + S.cfg.target + ' 分' : '单局定胜负'}${S.cfg.stack ? ' · 加牌可叠加' : S.cfg.challenge ? ' · +4 可质疑' : ''}`;
+  $('#roundinfo2').textContent = $('#roundinfo').textContent;
 
   for (const [k, v] of Object.entries(S.say || {})){
     const key = k + ':' + v[1];
@@ -1123,6 +1189,7 @@ function render(){
     </div>`;
   }
   $('#seats').innerHTML = h;
+  $('#seats').classList.toggle('many', order.length >= 6);
   $('#dirhint').textContent = me ? `方向 ${S.dir === 1 ? '→' : '←'} · 你的下家：${who(nextIdx(1, mySeat))}` : `方向 ${S.dir === 1 ? '→' : '←'}`;
 
   const col = COLORS.includes(S.color) ? S.color : 'r';
@@ -1149,8 +1216,7 @@ function render(){
   const tb = top3.length ? top3[top3.length - 1].by : undefined;
   $('#discardBy').innerHTML = tb != null && tb >= 0 && S.players[tb] ? `<i class="dot" style="--av:${AV[tb % AV.length]}"></i>${esc(who(tb))}出的` : '弃牌堆';
   $('#discard').classList.toggle('flash', S.phase === 'slap');
-  $('#slap').classList.toggle('hot', S.phase === 'slap');
-  $('#slap').disabled = !me;
+  document.querySelectorAll('.slap').forEach(b => { b.classList.toggle('hot', S.phase === 'slap'); b.disabled = !me; });
 
   const myTurn = me && S.current === mySeat && S.phase === 'play';
   $('#me').classList.toggle('turn', !!myTurn);
@@ -1187,6 +1253,9 @@ function render(){
   ub.classList.toggle('said', said && S.unoWindow !== mySeat);
   ub.classList.toggle('urgent', !!me && S.unoWindow === mySeat);
   ub.innerHTML = said && S.unoWindow !== mySeat ? '已喊 UNO' : 'UNO!<kbd>U</kbd>';
+  const cbtn = $('#btnCatch'), canCatch = !!me && S.catchable >= 0 && S.catchable !== mySeat;   // phone dock copy of the seat's 抓 button
+  cbtn.hidden = !canCatch;
+  if (canCatch){ cbtn.dataset.catch = S.catchable; cbtn.textContent = `抓${who(S.catchable)}！`; }
 
   // which of my cards just arrived
   let addedFresh = false;
@@ -1398,8 +1467,8 @@ function resetBoard(){
   $('#deckCount').textContent = '牌堆'; $('#hand').innerHTML = ''; $('#meSub').textContent = '— 张';
   $('#status').textContent = online() ? '等房主开局' : '选好玩法就开局'; $('#status').className = 'status';
   $('#colorchip').innerHTML = '<i style="--c:var(--muted)"></i>当前颜色 <b>—</b>';
-  $('#dirhint').textContent = ''; $('#roundinfo').textContent = ''; $('#meExtra').innerHTML = '';
-  $('#btnDraw').disabled = true; $('#btnUno').disabled = true; $('#btnPass').hidden = true;
+  $('#dirhint').textContent = ''; $('#roundinfo').textContent = ''; $('#roundinfo2').textContent = ''; $('#meExtra').innerHTML = '';
+  $('#btnDraw').disabled = true; $('#btnUno').disabled = true; $('#btnPass').hidden = true; $('#btnCatch').hidden = true;
   $('#stackBadge').hidden = true; $('#btnDraw').innerHTML = '摸牌<kbd>D</kbd>';
   $('#chalbox').hidden = true; $('#chalres').hidden = true;
   $('#me').classList.remove('turn');
@@ -1912,9 +1981,14 @@ $('#seats').addEventListener('click', e => {
   const b = e.target.closest('[data-catch]');
   if (b && S && mySeat >= 0) act({type:'catch', seat: Number(b.dataset.catch)});
 });
-const slapBtn = $('#slap');
-slapBtn.addEventListener('pointerdown', e => { e.preventDefault(); pressSlap(); });
-slapBtn.addEventListener('click', e => { if (e.detail === 0) pressSlap(); });
+document.querySelectorAll('.slap').forEach(slapBtn => {
+  slapBtn.addEventListener('pointerdown', e => { e.preventDefault(); pressSlap(); });
+  slapBtn.addEventListener('click', e => { if (e.detail === 0) pressSlap(); });
+});
+$('#btnCatch').addEventListener('click', e => {
+  const t = Number(e.currentTarget.dataset.catch);
+  if (S && mySeat >= 0 && t >= 0) act({type:'catch', seat: t});
+});
 document.addEventListener('keydown', e => {
   if (e.target.closest && e.target.closest('input,textarea,select')) return;
   if (overlayOpen()) return;
