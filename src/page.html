@@ -49,7 +49,9 @@ kbd{font:600 10px/1 var(--f-display);padding:2px 4px;border-radius:4px;border:1p
 
 /* header */
 .bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
-.brand{display:flex;align-items:center;gap:8px}
+.brand{display:flex;align-items:center;gap:8px;text-decoration:none;color:inherit}
+.brand .home{font:700 22px/1 var(--f-body);color:var(--muted)}
+.backhub{align-self:flex-start;color:var(--muted);text-decoration:none;font-size:13px}
 .logo{font:900 italic 30px/1 var(--f-display);letter-spacing:-.02em;color:var(--gold);text-shadow:2px 2px 0 #000;margin:0}
 .stamp0{display:inline-block;font:900 13px/1 var(--f-body);font-style:normal;color:#fff;background:var(--red);padding:5px 8px;border-radius:7px;transform:rotate(-6deg);box-shadow:0 2px 0 #7d1a1c;text-shadow:none;letter-spacing:0}
 .bar-right{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
@@ -369,7 +371,7 @@ button.sb.empty:hover{border-color:var(--gold);color:var(--gold)}
 <body>
 <div class="app">
   <header class="bar">
-    <div class="brand"><span class="logo">UNO</span><span class="stamp0">抢0</span></div>
+    <a class="brand" id="toHub" href="./" title="回到玩法大厅"><span class="home" aria-hidden="true">‹</span><span class="logo">UNO</span><span class="stamp0">抢0</span></a>
     <div class="bar-right">
       <span class="roomchip" id="roomchip" hidden></span>
       <span class="roundinfo" id="roundinfo"></span>
@@ -432,6 +434,7 @@ button.sb.empty:hover{border-color:var(--gold);color:var(--gold)}
 
 <div class="overlay" id="setup">
   <div class="panel">
+    <a class="backhub" href="./">‹ 玩法大厅</a>
     <div class="setup-hero">
       <div class="fan" id="fan"></div>
       <h1 class="logo big">UNO<span class="stamp0">抢0</span></h1>
@@ -2070,6 +2073,9 @@ $('#fan').innerHTML = [{c:'r', v:'0'}, {c:'y', v:'7'}, {c:'w', v:'wd4'}, {c:'b',
 $('#btnStart').addEventListener('click', () => { audioInit(); newLocalMatch(); });
 $('#btnResume').addEventListener('click', closeSetupResume);
 $('#btnSetup').addEventListener('click', () => { if (online()) showLobby(); else openSetup(); });
+$('#toHub').addEventListener('click', e => {
+  if ((net || (S && S.players && S.phase !== 'roundEnd')) && !window.confirm('离开这局，回到玩法大厅？')) e.preventDefault();
+});
 $('#btnRules').addEventListener('click', openRules);
 $('#btnShowRules').addEventListener('click', openRules);
 $('#btnShowRules2').addEventListener('click', openRules);
