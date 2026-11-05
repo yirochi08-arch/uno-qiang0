@@ -66,14 +66,17 @@ button{font-family:inherit}
 .btn.warmred{background:var(--red);color:#fff;border-color:transparent}
 
 /* playing cards */
-.pc{--w:56px;position:relative;display:block;flex:none;width:var(--w);aspect-ratio:5/7;border-radius:calc(var(--w)*.1);background:var(--paper);color:var(--pc-black);
-  box-shadow:inset 0 0 0 1px rgba(0,0,0,.14),0 2px 0 rgba(0,0,0,.2),0 5px 12px rgba(0,0,0,.3);overflow:hidden;user-select:none;-webkit-user-select:none}
+.pc{--w:56px;position:relative;display:block;flex:none;width:var(--w);aspect-ratio:5/7;border-radius:calc(var(--w)*.1);background:linear-gradient(160deg,#fffdf8 0%,#f2ede3 100%);color:var(--pc-black);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.2),-3px 0 6px rgba(0,0,0,.3),0 4px 10px rgba(0,0,0,.3);overflow:hidden;user-select:none;-webkit-user-select:none}
 .pc.red{color:var(--pc-red)}
-.pc .r{position:absolute;left:calc(var(--w)*.07);top:calc(var(--w)*.05);font:800 calc(var(--w)*.32)/1 var(--f-display);letter-spacing:-.07em}
-.pc .s{position:absolute;left:calc(var(--w)*.09);top:calc(var(--w)*.38);font-size:calc(var(--w)*.24);line-height:1}
-.pc .big{position:absolute;right:calc(var(--w)*.07);bottom:calc(var(--w)*.03);font-size:calc(var(--w)*.58);line-height:1}
-.pc.joker .jk{position:absolute;left:calc(var(--w)*.09);top:calc(var(--w)*.07);writing-mode:vertical-rl;text-orientation:upright;font:800 calc(var(--w)*.15)/1 var(--f-display);letter-spacing:-.02em}
-.pc.joker .jn{position:absolute;right:calc(var(--w)*.07);bottom:calc(var(--w)*.06);font:900 calc(var(--w)*.25)/1 var(--f-body)}
+/* the index (rank over suit) stays inside the strip an overlapped card still shows */
+.pc .idx{position:absolute;left:calc(var(--w)*.05);top:calc(var(--w)*.05);display:flex;flex-direction:column;align-items:flex-start;line-height:1}
+.pc .r{font:900 calc(var(--w)*.36)/.95 var(--f-display);letter-spacing:-.05em}
+.pc .r.ten{font-size:calc(var(--w)*.33);letter-spacing:-.2em;display:inline-block;transform:scaleX(.74);transform-origin:left center;margin-left:calc(var(--w)*-.02)}
+.pc .s{font-size:calc(var(--w)*.3);line-height:1;margin-top:calc(var(--w)*.01)}
+.pc .big{position:absolute;right:calc(var(--w)*.07);bottom:calc(var(--w)*.05);font-size:calc(var(--w)*.52);line-height:1}
+.pc.joker .jv{position:absolute;left:calc(var(--w)*.05);top:calc(var(--w)*.06);writing-mode:vertical-rl;text-orientation:upright;font:900 calc(var(--w)*.28)/1 var(--f-body);letter-spacing:.04em}
+.pc.joker .jstar{position:absolute;right:calc(var(--w)*.08);bottom:calc(var(--w)*.06);font-size:calc(var(--w)*.48);line-height:1}
 .pc.back{background:repeating-linear-gradient(135deg,#7a2a2a 0 5px,#652222 5px 10px);box-shadow:inset 0 0 0 calc(var(--w)*.06) var(--paper),0 2px 0 rgba(0,0,0,.2),0 5px 12px rgba(0,0,0,.3)}
 
 /* table */
@@ -96,7 +99,7 @@ button{font-family:inherit}
 .opp.right .warn{right:auto;left:8px}
 .mid{grid-area:mid;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;padding-top:2px}
 .bottom3{display:flex;gap:4px}
-.bottom3 .pc{--w:30px}
+.bottom3 .pc{--w:36px}
 .midinfo{font-size:12px;color:var(--muted);white-space:nowrap}
 .midinfo b{color:var(--gold)}
 .play{min-height:80px;display:flex;flex-direction:column;gap:4px;min-width:0}
@@ -128,6 +131,13 @@ button{font-family:inherit}
 .hand .pc + .pc{margin-left:var(--ov,-30px)}
 .hand .pc.sel{transform:translateY(-18px);box-shadow:inset 0 0 0 2px var(--gold),0 2px 0 rgba(0,0,0,.2),0 8px 16px rgba(0,0,0,.35)}
 .hand .emptyhand{margin:auto;color:var(--muted)}
+/* a big hand on a narrow screen: two overlapping rows, higher cards on top, so every index stays readable */
+.hand.two{flex-direction:column;align-items:stretch}
+.hand.two > .hrow{display:flex;margin-left:0;margin-right:0}
+.hand .hrow > :first-child{margin-left:auto}
+.hand .hrow > :last-child{margin-right:auto}
+.hand .hrow + .hrow{margin-top:calc(var(--w) * -.62)}
+.hand .hrow + .hrow .pc.sel{transform:translateY(-7px)}   /* a big lift would cover the top row's index */
 .actions{display:flex;gap:8px;justify-content:center}
 .actions .btn{flex:1;max-width:150px;height:50px;border-radius:14px;font-size:16px}
 
@@ -643,10 +653,10 @@ function toast(msg, kind){
 function pcHTML(id, extra){
   if (id === 52 || id === 53){
     const big = id === 53;
-    return `<span class="pc joker${big ? ' red' : ''} ${extra || ''}" data-id="${id}"><span class="jk">JOKER</span><span class="jn">${big ? '大王' : '小王'}</span></span>`;
+    return `<span class="pc joker${big ? ' red' : ''} ${extra || ''}" data-id="${id}"><span class="jv">${big ? '大王' : '小王'}</span><span class="jstar">★</span></span>`;
   }
-  const s = suitOf(id), red = s === 1 || s === 3;
-  return `<span class="pc${red ? ' red' : ''} ${extra || ''}" data-id="${id}"><span class="r">${RANKS[rankOf(id)]}</span><span class="s">${SUITS[s]}</span><span class="big">${SUITS[s]}</span></span>`;
+  const s = suitOf(id), red = s === 1 || s === 3, r = RANKS[rankOf(id)];
+  return `<span class="pc${red ? ' red' : ''} ${extra || ''}" data-id="${id}"><span class="idx"><span class="r${r === '10' ? ' ten' : ''}">${r}</span><span class="s">${SUITS[s]}</span></span><span class="big">${SUITS[s]}</span></span>`;
 }
 const BACKC = '<span class="pc back"></span>';
 function isPartner(a, b){ return GAME === 'ddz' && a !== b && a !== S.landlord && b !== S.landlord && S.landlord >= 0; }
@@ -936,8 +946,16 @@ function render(){
   else if (!me.hand.length) hand.innerHTML = '<span class="emptyhand">出完了</span>';
   else {
     const ids = new Set(me.hand); for (const id of [...sel]) if (!ids.has(id)) sel.delete(id);
-    hand.innerHTML = me.hand.map(id => pcHTML(id, sel.has(id) ? 'sel' : '')).join('');
-    fitRow(hand, .62);
+    const two = me.hand.length >= 14 && hand.clientWidth < 520;
+    hand.classList.toggle('two', two);
+    if (two){
+      const half = Math.ceil(me.hand.length / 2);
+      hand.innerHTML = [me.hand.slice(0, half), me.hand.slice(half)].map(r => `<div class="hrow">${r.map(id => pcHTML(id, sel.has(id) ? 'sel' : '')).join('')}</div>`).join('');
+      hand.querySelectorAll('.hrow').forEach(r => fitRow(r, .62));
+    } else {
+      hand.innerHTML = me.hand.map(id => pcHTML(id, sel.has(id) ? 'sel' : '')).join('');
+      fitRow(hand, .62);
+    }
   }
   document.querySelectorAll('.play .cards').forEach(el => fitRow(el, .55));
 
