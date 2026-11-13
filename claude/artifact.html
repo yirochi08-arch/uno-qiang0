@@ -1230,6 +1230,7 @@ function render(){
 
   let st = '', cls = '';
   if (!me) st = live ? `观战中 · 等${who(S.current)}出牌` : '观战中';
+  else if (me.bot){ st = '连接断了，电脑先替你出牌；网络恢复后自动接回'; cls = 'alert'; }
   else if (S.phase === 'slap'){ st = '出 0 了，快拍！'; cls = 'alert'; }
   else if (S.unoWindow === mySeat){ st = '只剩 1 张，快喊 UNO！'; cls = 'alert'; }
   else if (S.chal && S.chal.to === mySeat){ st = '质疑这张 +4，还是摸 4 张？'; cls = 'alert'; }
@@ -1620,13 +1621,14 @@ function leaveRoom(){
 }
 function onRoomPeers(change){
   if (!net) return;
+  net.peers = change.peers;
   if (!change.joined.length && !change.left.length && change.updated.every(p => p.sameTab)) return;
   net.online = change.peers.filter(p => p.presence && p.presence.t === net.code).length;
   if (mode === 'host') hostPeers(change.peers);
   else clientPeers(change.peers);
   updateRoomChip();
 }
-function hostPeers(peers){
+function readRoster(peers){
   const list = []; const seen = new Set();
   for (const p of peers){
     if (p.sameTab) continue;
@@ -1650,6 +1652,12 @@ function hostPeers(peers){
       if (back) pl.sid = back.sid;
     }
     net.present = new Set(S.players.filter(pl => pl.kind === 'remote' && pids.has(pl.uid + ':' + pl.sid)).map(pl => pl.uid + ':' + pl.sid));
+  }
+  return list;
+}
+function hostPeers(peers){
+  const list = readRoster(peers);
+  if (S && S.players){
     for (const r of list){
       const seat = S.players.findIndex(pl => pl.kind === 'remote' && pl.uid === r.uid && pl.sid === r.sid);
       if (seat < 0) continue;
@@ -1667,6 +1675,8 @@ function hostPeers(peers){
 }
 function hostTick(){
   if (!net || !S || !S.players || S.phase === 'roundEnd') return;
+  const peers = net.ch && net.ch.peers ? net.ch.peers() : net.peers;   // who is in the room right now, not only who changed
+  if (peers) readRoster(peers);
   const now = Date.now(); let changed = false;
   S.players.forEach((p, i) => {
     if (p.kind !== 'remote') return;

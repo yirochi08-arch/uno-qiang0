@@ -928,6 +928,7 @@ function render(){
   } else $('#meInfo').textContent = '观战中';
   let st = '', cls = '';
   if (!me) st = live ? `观战中 · 等${who(S.current)}` : '观战中';
+  else if (me.bot){ st = '连接断了，电脑先替你出牌；网络恢复后自动接回'; cls = 'alert'; }
   else if (S.phase === 'roundEnd') st = '这一局结束了';
   else if (turn && S.phase === 'bid'){ st = S.bid.top ? `叫分：要比 ${S.bid.top} 分高，或者不叫` : '叫分：叫得越高赢得越多'; cls = 'go'; }
   else if (turn){
@@ -1263,7 +1264,7 @@ function onRoomPeers(change){
   if (mode === 'host') hostPeers(change.peers); else clientPeers(change.peers);
   updateRoomChip();
 }
-function hostPeers(peers){
+function readRoster(peers){
   const list = [], seen = new Set();
   for (const p of peers){
     if (p.sameTab) continue;
@@ -1285,6 +1286,12 @@ function hostPeers(peers){
       if (back) pl.sid = back.sid;
     }
     net.present = new Set(S.players.filter(pl => pl.kind === 'remote' && pids.has(pl.uid + ':' + pl.sid)).map(pl => pl.uid + ':' + pl.sid));
+  }
+  return list;
+}
+function hostPeers(peers){
+  const list = readRoster(peers);
+  if (S && S.players){
     for (const r of list){
       const seat = S.players.findIndex(pl => pl.kind === 'remote' && pl.uid === r.uid && pl.sid === r.sid);
       if (seat < 0) continue;
@@ -1301,6 +1308,7 @@ function hostPeers(peers){
 }
 function hostTick(){
   if (!net || !S || !S.players || S.phase === 'roundEnd') return;
+  if (net.ch && net.ch.peers) readRoster(net.ch.peers());   // who is in the room right now, not only who changed
   const now = Date.now(); let changed = false;
   S.players.forEach((p, i) => {
     if (p.kind !== 'remote') return;
